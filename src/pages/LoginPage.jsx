@@ -183,6 +183,9 @@ export default function LoginPage() {
             <h1 className="login-title">Enter Phone Number</h1>
             <p className="login-sub">We'll send an OTP to verify your identity</p>
 
+            {/* Invisible reCAPTCHA container — must be in DOM before sendOTP is called */}
+            <div id="recaptcha-container" />
+
             <form onSubmit={handleSendOTP}>
               <div className="form-group">
                 <label className="form-label">Phone Number</label>
@@ -205,7 +208,6 @@ export default function LoginPage() {
               </div>
 
               <button
-                id="send-otp-btn"
                 type="submit"
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', padding: '12px 0', fontSize: 15, marginTop: 4 }}

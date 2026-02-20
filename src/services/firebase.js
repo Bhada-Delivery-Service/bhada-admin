@@ -14,37 +14,38 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Setup invisible reCAPTCHA
-export const setupRecaptcha = (buttonId) => {
-  // Clear any existing verifier
+// Clear any existing verifier
+const clearRecaptcha = () => {
   if (window.recaptchaVerifier) {
-    window.recaptchaVerifier.clear();
+    try { window.recaptchaVerifier.clear(); } catch (_) {}
     window.recaptchaVerifier = null;
   }
+};
 
-  window.recaptchaVerifier = new RecaptchaVerifier(auth, buttonId, {
+// Send OTP — containerId must be an existing div in the DOM
+export const sendOTP = async (phoneNumber, containerId = 'recaptcha-container') => {
+  clearRecaptcha();
+
+  const container = document.getElementById(containerId);
+  if (!container) {
+    throw new Error(`reCAPTCHA container #${containerId} not found in DOM`);
+  }
+
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, container, {
     size: 'invisible',
     callback: () => {},
-    'expired-callback': () => {
-      window.recaptchaVerifier = null;
-    },
+    'expired-callback': clearRecaptcha,
   });
 
-  return window.recaptchaVerifier;
+  await window.recaptchaVerifier.render();
+  return signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
 };
 
-// Send OTP to phone number
-export const sendOTP = async (phoneNumber) => {
-  const verifier = setupRecaptcha('send-otp-btn');
-  const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-  return confirmation;
-};
-
-// Verify OTP and get idToken
+// Verify OTP and return idToken (login flow)
 export const verifyOTP = async (confirmationResult, otp) => {
   const result = await confirmationResult.confirm(otp);
-  const idToken = await result.user.getIdToken();
-  return idToken;
+  return result.user.getIdToken();
 };
 
+export { clearRecaptcha };
 export default app;
