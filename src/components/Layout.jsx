@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
+  AlertTriangle, CreditCard, LogOut, Menu, X, Bell, ChevronDown
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+
+const navSections = [
+  {
+    label: 'Overview',
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/orders', icon: Package, label: 'Orders' },
+      { to: '/riders', icon: Bike, label: 'Riders' },
+      { to: '/disputes', icon: AlertTriangle, label: 'Disputes' },
+    ],
+  },
+  {
+    label: 'Finance',
+    items: [
+      { to: '/payments', icon: CreditCard, label: 'Payments' },
+      { to: '/pricing', icon: BadgePercent, label: 'Pricing' },
+      { to: '/offers', icon: Tag, label: 'Offers' },
+    ],
+  },
+  {
+    label: 'Administration',
+    items: [
+      { to: '/admins', icon: ShieldCheck, label: 'Admins' },
+    ],
+  },
+];
+
+function getInitials(user) {
+  if (!user) return 'A';
+  const name = user.firstName || user.email || user.uid || '';
+  return name.charAt(0).toUpperCase() || 'A';
+}
+
+function getRoleLabel(user) {
+  if (user?.isSuperAdmin) return 'Super Admin';
+  if (user?.adminLevel) return user.adminLevel.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  return 'Admin';
+}
+
+export default function Layout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+    toast.success('Logged out successfully');
+  };
+
+  const getPageTitle = () => {
+    const path = window.location.pathname;
+    const map = {
+      '/': 'Dashboard',
+      '/orders': 'Orders',
+      '/riders': 'Riders',
+      '/admins': 'Admin Management',
+      '/pricing': 'Pricing',
+      '/offers': 'Offers',
+      '/disputes': 'Disputes',
+      '/payments': 'Payments',
+    };
+    return map[path] || 'Dashboard';
+  };
+
+  return (
+    <div className="app-shell">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(5,8,15,0.7)', zIndex: 99 }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-mark">B</div>
+          <div>
+            <div className="sidebar-logo-text">Bhada</div>
+            <div className="sidebar-logo-badge">ADMIN CONSOLE v2.1</div>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          {navSections.map(section => (
+            <div key={section.label}>
+              <div className="nav-section-label">{section.label}</div>
+              {section.items.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.exact}
+                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon size={16} />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{getInitials(user)}</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{user?.email || user?.uid || 'Admin'}</div>
+              <div className="sidebar-user-role">{getRoleLabel(user)}</div>
+            </div>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ width: '100%', justifyContent: 'flex-start', marginTop: 4 }}
+            onClick={handleLogout}
+          >
+            <LogOut size={14} />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="main-content">
+        <header className="topbar">
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ display: 'none' }}
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu size={18} />
+          </button>
+          <div className="topbar-title" id="page-title">{getPageTitle()}</div>
+          <div className="topbar-actions">
+            {user?.isSuperAdmin && (
+              <span className="badge accent">
+                <ShieldCheck size={10} />
+                Super Admin
+              </span>
+            )}
+          </div>
+        </header>
+
+        <main className="page-content">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
