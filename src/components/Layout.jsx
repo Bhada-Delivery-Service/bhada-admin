@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
+  Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +22,7 @@ const navSections = [
     items: [
       { to: '/orders',   icon: Package,        label: 'Orders' },
       { to: '/riders',   icon: Bike,           label: 'Riders' },
+      { to: '/tracking', icon: Navigation,      label: 'Live Tracking' },
       { to: '/disputes', icon: AlertTriangle,  label: 'Disputes' },
     ],
   },

@@ -123,4 +123,10 @@ export const notificationsAPI = {
   markAllSeen:  ()           => api.put('/notifications/seen-all'),
 };
 
+// ─── Tracking ──────────────────────────────────────────────────────────────
+export const trackingAPI = {
+  getAll:    () => api.get('/tracking/locations'),
+  getById:   (riderId) => api.get(`/tracking/locations/${riderId}`),
+};
+
 export default api;

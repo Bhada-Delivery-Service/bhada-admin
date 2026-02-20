@@ -13,6 +13,7 @@ import PricingPage from './pages/PricingPage';
 import OffersPage from './pages/OffersPage';
 import DisputesPage from './pages/DisputesPage';
 import PaymentsPage from './pages/PaymentsPage';
+import TrackingPage from './pages/TrackingPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,7 @@ function AppWithNotifications() {
           <Route path="offers"   element={<OffersPage />} />
           <Route path="disputes" element={<DisputesPage />} />
           <Route path="payments" element={<PaymentsPage />} />
+          <Route path="tracking" element={<TrackingPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
