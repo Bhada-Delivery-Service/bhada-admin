@@ -115,4 +115,12 @@ export const disputesAPI = {
   reject: (id, adminNote) => api.put(`/disputes/${id}/reject`, { adminNote }),
 };
 
+// ─── Notifications ─────────────────────────────────────────────────────────
+export const notificationsAPI = {
+  getAll:       (limit = 40) => api.get(`/notifications?limit=${limit}`),
+  getCount:     ()           => api.get('/notifications/count'),
+  markSeen:     (id)         => api.put(`/notifications/${id}/seen`),
+  markAllSeen:  ()           => api.put('/notifications/seen-all'),
+};
+
 export default api;

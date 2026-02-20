@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
-  AlertTriangle, CreditCard, LogOut, Menu, X, Bell, ChevronDown
+  AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import NotificationPanel from '../components/NotificationPanel';
 import toast from 'react-hot-toast';
 
 const navSections = [
@@ -17,17 +19,17 @@ const navSections = [
   {
     label: 'Operations',
     items: [
-      { to: '/orders', icon: Package, label: 'Orders' },
-      { to: '/riders', icon: Bike, label: 'Riders' },
-      { to: '/disputes', icon: AlertTriangle, label: 'Disputes' },
+      { to: '/orders',   icon: Package,        label: 'Orders' },
+      { to: '/riders',   icon: Bike,           label: 'Riders' },
+      { to: '/disputes', icon: AlertTriangle,  label: 'Disputes' },
     ],
   },
   {
     label: 'Finance',
     items: [
-      { to: '/payments', icon: CreditCard, label: 'Payments' },
-      { to: '/pricing', icon: BadgePercent, label: 'Pricing' },
-      { to: '/offers', icon: Tag, label: 'Offers' },
+      { to: '/payments', icon: CreditCard,   label: 'Payments' },
+      { to: '/pricing',  icon: BadgePercent, label: 'Pricing' },
+      { to: '/offers',   icon: Tag,          label: 'Offers' },
     ],
   },
   {
@@ -52,6 +54,7 @@ function getRoleLabel(user) {
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { unseenCount, openPanel } = useNotifications();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -64,14 +67,14 @@ export default function Layout() {
   const getPageTitle = () => {
     const path = window.location.pathname;
     const map = {
-      '/': 'Dashboard',
-      '/orders': 'Orders',
-      '/riders': 'Riders',
-      '/admins': 'Admin Management',
-      '/pricing': 'Pricing',
-      '/offers': 'Offers',
-      '/disputes': 'Disputes',
-      '/payments': 'Payments',
+      '/':          'Dashboard',
+      '/orders':    'Orders',
+      '/riders':    'Riders',
+      '/admins':    'Admin Management',
+      '/pricing':   'Pricing',
+      '/offers':    'Offers',
+      '/disputes':  'Disputes',
+      '/payments':  'Payments',
     };
     return map[path] || 'Dashboard';
   };
@@ -135,7 +138,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main content */}
       <div className="main-content">
         <header className="topbar">
           <button
@@ -146,14 +149,38 @@ export default function Layout() {
           >
             <Menu size={18} />
           </button>
+
           <div className="topbar-title" id="page-title">{getPageTitle()}</div>
-          <div className="topbar-actions">
+
+          <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {user?.isSuperAdmin && (
               <span className="badge accent">
                 <ShieldCheck size={10} />
                 Super Admin
               </span>
             )}
+
+            {/* ── Bell button ── */}
+            <button
+              onClick={openPanel}
+              className="btn btn-ghost btn-sm"
+              style={{ position: 'relative', padding: '6px 8px' }}
+              title="Notifications"
+            >
+              <Bell size={18} />
+              {unseenCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  width: 17, height: 17, borderRadius: '50%',
+                  background: 'var(--accent)', color: 'var(--bg-0)',
+                  fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                  display: 'grid', placeItems: 'center',
+                  border: '2px solid var(--bg-1)',
+                }}>
+                  {unseenCount > 9 ? '9+' : unseenCount}
+                </span>
+              )}
+            </button>
           </div>
         </header>
 
@@ -161,6 +188,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Notification slide-in panel */}
+      <NotificationPanel />
     </div>
   );
 }
