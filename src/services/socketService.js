@@ -3,9 +3,16 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 let socket = null;
+const connectListeners = new Set();
+
+export function onSocketConnect(fn) {
+  connectListeners.add(fn);
+  if (socket?.connected) fn(socket);
+  return () => connectListeners.delete(fn);
+}
 
 export function connectSocket(token) {
-  if (socket?.connected) return socket;
+  if (socket) return socket;
 
   socket = io(SOCKET_URL, {
     auth: { token },
@@ -18,6 +25,7 @@ export function connectSocket(token) {
   socket.on('connect', () => {
     console.log('[WS:Admin] Connected —', socket.id);
     socket.emit('ping');
+    connectListeners.forEach(fn => fn(socket));
   });
 
   socket.on('disconnect', (reason) => {
@@ -25,7 +33,7 @@ export function connectSocket(token) {
   });
 
   socket.on('connect_error', (err) => {
-    console.warn('[WS:Admin] Connection error —', err.message);
+    console.error('[WS:Admin] Connection error —', err.message);
   });
 
   return socket;
@@ -36,6 +44,8 @@ export function disconnectSocket() {
     socket.disconnect();
     socket = null;
   }
+  // Do NOT clear connectListeners — TrackingPage's onSocketConnect subscription
+  // must survive token refresh so it re-registers after reconnect.
 }
 
 export function getSocket() {

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
   Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
+  IndianRupee, ArrowDownToLine,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -29,9 +30,11 @@ const navSections = [
   {
     label: 'Finance',
     items: [
-      { to: '/payments', icon: CreditCard,   label: 'Payments' },
-      { to: '/pricing',  icon: BadgePercent, label: 'Pricing' },
-      { to: '/offers',   icon: Tag,          label: 'Offers' },
+      { to: '/earnings',     icon: IndianRupee,      label: 'Rider Earnings' },
+      { to: '/withdrawals',  icon: ArrowDownToLine,  label: 'Withdrawals' },
+      { to: '/payments',     icon: CreditCard,       label: 'Payments' },
+      { to: '/pricing',      icon: BadgePercent,     label: 'Pricing' },
+      { to: '/offers',       icon: Tag,              label: 'Offers' },
     ],
   },
   {
@@ -76,7 +79,9 @@ export default function Layout() {
       '/pricing':   'Pricing',
       '/offers':    'Offers',
       '/disputes':  'Disputes',
-      '/payments':  'Payments',
+      '/payments':    'Payments',
+      '/withdrawals': 'Withdrawals',
+      '/earnings':    'Rider Earnings',
     };
     return map[path] || 'Dashboard';
   };

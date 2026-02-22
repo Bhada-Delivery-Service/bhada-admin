@@ -14,6 +14,8 @@ import OffersPage from './pages/OffersPage';
 import DisputesPage from './pages/DisputesPage';
 import PaymentsPage from './pages/PaymentsPage';
 import TrackingPage from './pages/TrackingPage';
+import WithdrawalsPage from './pages/WithdrawalsPage';
+import EarningsPage from './pages/EarningsPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -27,11 +29,12 @@ function PublicRoute({ children }) {
   return user ? <Navigate to="/" replace /> : children;
 }
 
-// Inner app — has access to auth token for socket
 function AppWithNotifications() {
-  const { user } = useAuth();
-  const accessToken = localStorage.getItem('accessToken');
-
+  const { user, accessToken } = useAuth();
+  // accessToken comes from AuthContext state — it updates whenever the HTTP
+  // interceptor refreshes it (via the 'tokenRefreshed' window event).
+  // This causes NotificationProvider to reconnect the socket with a fresh token,
+  // fixing the "Invalid token" socket error that happened when the 1h JWT expired.
   return (
     <NotificationProvider accessToken={user ? accessToken : null}>
       <Routes>
@@ -45,7 +48,9 @@ function AppWithNotifications() {
           <Route path="offers"   element={<OffersPage />} />
           <Route path="disputes" element={<DisputesPage />} />
           <Route path="payments" element={<PaymentsPage />} />
-          <Route path="tracking" element={<TrackingPage />} />
+          <Route path="tracking"     element={<TrackingPage />} />
+          <Route path="withdrawals" element={<WithdrawalsPage />} />
+          <Route path="earnings"     element={<EarningsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

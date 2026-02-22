@@ -5,7 +5,6 @@ import { connectSocket, disconnectSocket } from '../services/socketService';
 
 const NotificationContext = createContext(null);
 
-// Map notification type → toast emoji
 const NOTIF_EMOJI = {
   ONBOARDING_SUBMITTED: '📋',
   ONBOARDING_APPROVED:  '🎉',
@@ -28,13 +27,12 @@ const NOTIF_EMOJI = {
 };
 
 export function NotificationProvider({ children, accessToken }) {
-  const [notifications, setNotifications]   = useState([]);
-  const [unseenCount,   setUnseenCount]     = useState(0);
-  const [loading,       setLoading]         = useState(false);
-  const [panelOpen,     setPanelOpen]       = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unseenCount,   setUnseenCount]   = useState(0);
+  const [loading,       setLoading]       = useState(false);
+  const [panelOpen,     setPanelOpen]     = useState(false);
   const socketRef = useRef(null);
 
-  // ── Fetch from REST ──────────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
@@ -49,21 +47,22 @@ export function NotificationProvider({ children, accessToken }) {
     }
   }, [accessToken]);
 
-  // ── Socket setup ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!accessToken) return;
+
+    // Disconnect any existing socket before creating a new one.
+    // This is critical: when accessToken changes (refresh or new login),
+    // we must reconnect with the fresh token so the server accepts it.
+    disconnectSocket();
 
     const socket = connectSocket(accessToken);
     socketRef.current = socket;
 
-    // New notification arrives in real-time
     socket.on('notification:new', (n) => {
-      // Only show DB-persisted ones (not broadcast-only ORDER_AVAILABLE blasts)
       if (n.id) {
         setNotifications(prev => [n, ...prev]);
         setUnseenCount(prev => prev + 1);
       }
-      // Show toast for every event
       const emoji = NOTIF_EMOJI[n.type] || '🔔';
       toast(`${emoji}  ${n.title}\n${n.body}`, {
         duration: 6000,
@@ -79,7 +78,6 @@ export function NotificationProvider({ children, accessToken }) {
       });
     });
 
-    // Badge count update pushed after markSeen / markAllSeen
     socket.on('notification:count', ({ unseen }) => {
       setUnseenCount(unseen);
     });
@@ -92,7 +90,7 @@ export function NotificationProvider({ children, accessToken }) {
     };
   }, [accessToken, fetchNotifications]);
 
-  // Cleanup on logout
+  // Cleanup on logout (accessToken becomes null)
   useEffect(() => {
     if (!accessToken) {
       disconnectSocket();
@@ -102,7 +100,6 @@ export function NotificationProvider({ children, accessToken }) {
     }
   }, [accessToken]);
 
-  // ── Actions ──────────────────────────────────────────────────────────────
   const markSeen = useCallback(async (id) => {
     try {
       await notificationsAPI.markSeen(id);
@@ -119,7 +116,7 @@ export function NotificationProvider({ children, accessToken }) {
     } catch (e) { console.error('[Notif] markAllSeen failed', e); }
   }, []);
 
-  const openPanel  = useCallback(() => setPanelOpen(true), []);
+  const openPanel  = useCallback(() => setPanelOpen(true),  []);
   const closePanel = useCallback(() => setPanelOpen(false), []);
 
   return (

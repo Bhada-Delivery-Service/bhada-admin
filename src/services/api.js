@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 const api = axios.create({
@@ -8,14 +7,14 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor - attach token
+// Request interceptor — attach latest token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Response interceptor - handle token refresh
+// Response interceptor — silent token refresh
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -27,6 +26,11 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken });
         localStorage.setItem('accessToken', data.accessToken);
         original.headers.Authorization = `Bearer ${data.accessToken}`;
+
+        // Tell AuthContext (and therefore NotificationProvider/socket) about the new token.
+        // This causes the socket to reconnect with a fresh, valid token.
+        window.dispatchEvent(new Event('tokenRefreshed'));
+
         return api(original);
       } catch {
         localStorage.clear();
@@ -81,7 +85,9 @@ export const ridersAPI = {
   rejectOnboarding: (id) => api.put(`/riders/${id}/onboarding/reject`),
   assignOrder: (riderId, orderId) => api.post(`/riders/${riderId}/assign/${orderId}`),
   getPerformance: (id) => api.get(`/riders/${id}/performance`),
-  rate: (id, rating) => api.post(`/riders/${id}/rate`, { rating }),
+  rate: (id, rating, options = {}) => api.post(`/riders/${id}/rate`, { rating, ...options }),
+  getRatings: (id) => api.get(`/riders/${id}/ratings`),
+  getRoutes: (id) => api.get(`/riders/${id}/routes`),
 };
 
 // ─── Offers ────────────────────────────────────────────────────────────────
@@ -127,6 +133,29 @@ export const notificationsAPI = {
 export const trackingAPI = {
   getAll:    () => api.get('/tracking/locations'),
   getById:   (riderId) => api.get(`/tracking/locations/${riderId}`),
+};
+
+// ─── Files ─────────────────────────────────────────────────────────────────
+export const filesAPI = {
+  upload: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/files/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+};
+
+// ─── Earnings & Withdrawals ────────────────────────────────────────────────
+export const earningsAPI = {
+  // Per-rider views
+  getRiderSummary:    (riderId)             => api.get(`/earnings/riders/${riderId}/summary`),
+  getRiderEarnings:   (riderId, limit = 50) => api.get(`/earnings/riders/${riderId}?limit=${limit}`),
+  getRiderWithdrawals:(riderId)             => api.get(`/earnings/riders/${riderId}/withdrawals`),
+  creditRider:        (riderId, data)       => api.post(`/earnings/riders/${riderId}/credit`, data),
+  // All withdrawal requests (admin-wide)
+  getAllWithdrawals:   (status)             => api.get(`/earnings/withdrawals${status && status !== 'ALL' ? '?status=' + status : ''}`),
+  getWithdrawal:      (id)                 => api.get(`/earnings/withdrawals/${id}`),
+  processWithdrawal:  (id, data)           => api.put(`/earnings/withdrawals/${id}/process`, data),
+  rejectWithdrawal:   (id, reason)         => api.put(`/earnings/withdrawals/${id}/reject`, { reason }),
 };
 
 export default api;

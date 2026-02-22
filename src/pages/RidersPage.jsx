@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bike, Search, RefreshCw, X, CheckCircle, XCircle, Eye, Star, FileText, ExternalLink } from 'lucide-react';
+import { Bike, Search, RefreshCw, X, CheckCircle, XCircle, Eye, Star, FileText, ExternalLink, Navigation, Banknote, Copy, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ridersAPI } from '../services/api';
 import { StatusBadge } from './DashboardPage';
@@ -50,7 +51,77 @@ function DocImage({ url, label }) {
   );
 }
 
-/* ── live indicator ─────────────────────────────────────────────────────── */
+/* ── copy button ─────────────────────────────────────────────────────────── */
+function CopyBtn({ text }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
+  return (
+    <button onClick={copy} title="Copy"
+      style={{ background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--green)' : 'var(--text-2)', padding: '0 4px', verticalAlign: 'middle' }}>
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+    </button>
+  );
+}
+
+/* ── bank account display block ──────────────────────────────────────────── */
+function BankAccountBlock({ rider }) {
+  const hasBank = !!(rider?.bankAccountNumber || rider?.upiId);
+  if (!hasBank) return (
+    <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text-2)' }}>
+      No payout account saved by rider yet.
+    </div>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {rider.upiId && (
+        <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>UPI ID</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>
+            {rider.upiId} <CopyBtn text={rider.upiId} />
+          </div>
+        </div>
+      )}
+      {rider.bankAccountNumber && (
+        <>
+          {rider.bankAccountHolderName && (
+            <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Account Holder</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-0)' }}>{rider.bankAccountHolderName}</div>
+            </div>
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Account Number</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>
+                {rider.bankAccountNumber} <CopyBtn text={rider.bankAccountNumber} />
+              </div>
+            </div>
+            {rider.bankIfscCode && (
+              <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>IFSC Code</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>
+                  {rider.bankIfscCode} <CopyBtn text={rider.bankIfscCode} />
+                </div>
+              </div>
+            )}
+          </div>
+          {rider.bankName && (
+            <div style={{ padding: '10px 14px', background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 8 }}>
+              <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Bank</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-0)' }}>{rider.bankName}</div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 function LiveDot() {
   return (
     <span title="Live updates active" style={{
@@ -68,6 +139,7 @@ function LiveDot() {
 }
 
 export default function RidersPage() {
+  const navigate = useNavigate();
   const [riders,    setRiders]    = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState('');
@@ -279,8 +351,18 @@ export default function RidersPage() {
 
                       <td>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          <button className="btn btn-ghost btn-sm" onClick={() => setSelected(rider)}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setSelected(rider)} title="View details">
                             <Eye size={13} />
+                          </button>
+
+                          {/* Direct Track button — navigates to Tracking page and searches this rider */}
+                          <button
+                            className="btn btn-sm"
+                            title="Track on map"
+                            onClick={() => navigate(`/tracking?trackRider=${rid}`)}
+                            style={{ background: 'var(--accent-dim)', color: 'var(--accent)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <Navigation size={12} /> Track
                           </button>
 
                           {rider.kycStatus === 'PENDING' && (
@@ -385,6 +467,14 @@ export default function RidersPage() {
                 </div>
               </div>
             )}
+
+            {/* Payout account details */}
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Banknote size={12} /> Payout Account
+              </div>
+              <BankAccountBlock rider={selected} />
+            </div>
 
             {/* Quick-action buttons inside modal */}
             {(selected.kycStatus === 'PENDING' || selected.onboardingStatus === 'PENDING') && (
