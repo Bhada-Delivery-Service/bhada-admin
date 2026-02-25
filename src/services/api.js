@@ -26,11 +26,7 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${BASE_URL}/auth/refresh-token`, { refreshToken });
         localStorage.setItem('accessToken', data.accessToken);
         original.headers.Authorization = `Bearer ${data.accessToken}`;
-
-        // Tell AuthContext (and therefore NotificationProvider/socket) about the new token.
-        // This causes the socket to reconnect with a fresh, valid token.
         window.dispatchEvent(new Event('tokenRefreshed'));
-
         return api(original);
       } catch {
         localStorage.clear();
@@ -43,7 +39,7 @@ api.interceptors.response.use(
 
 // ─── Auth ──────────────────────────────────────────────────────────────────
 export const authAPI = {
-  loginAdmin: (idToken, adminPassword) =>
+  loginAdmin:   (idToken, adminPassword) =>
     api.post('/auth/verify-firebase/admin', { idToken, adminPassword }),
   refreshToken: (refreshToken) =>
     api.post('/auth/refresh-token', { refreshToken }),
@@ -52,87 +48,94 @@ export const authAPI = {
 
 // ─── Admins ────────────────────────────────────────────────────────────────
 export const adminsAPI = {
-  seedSuperAdmin: () => api.post('/admins/seed-super-admin'),
-  getAll: (pageSize = 20) => api.get(`/admins?pageSize=${pageSize}`),
-  getById: (id) => api.get(`/admins/${id}`),
-  getSuperAdmin: () => api.get('/admins/super-admin'),
-  getByLevel: (level) => api.get(`/admins/by-level/${level}`),
-  create: (data) => api.post('/admins', data),
-  update: (id, data) => api.put(`/admins/${id}`, data),
-  delete: (id) => api.delete(`/admins/${id}`),
+  seedSuperAdmin: ()           => api.post('/admins/seed-super-admin'),
+  getAll:         (pageSize=20)=> api.get(`/admins?pageSize=${pageSize}`),
+  getById:        (id)         => api.get(`/admins/${id}`),
+  getSuperAdmin:  ()           => api.get('/admins/super-admin'),
+  getByLevel:     (level)      => api.get(`/admins/by-level/${level}`),
+  create:         (data)       => api.post('/admins', data),
+  update:         (id, data)   => api.put(`/admins/${id}`, data),
+  delete:         (id)         => api.delete(`/admins/${id}`),
 };
 
 // ─── Orders ────────────────────────────────────────────────────────────────
 export const ordersAPI = {
-  getAll: (pageSize = 20) => api.get(`/orders?pageSize=${pageSize}`),
-  getById: (id) => api.get(`/orders/${id}`),
-  getByStatus: (status) => api.get(`/orders/status/${status}`),
-  getAvailable: () => api.get('/orders/available'),
-  update: (id, data) => api.put(`/orders/${id}`, data),
-  cancel: (id, reason) => api.put(`/orders/${id}/cancel`, { reason }),
-  accept: (id) => api.put(`/orders/${id}/accept`),
-  checkAvailability: (params) => api.get('/orders/check-availability', { params }),
+  getAll:            (pageSize=20) => api.get(`/orders?pageSize=${pageSize}`),
+  getById:           (id)          => api.get(`/orders/${id}`),
+  getByStatus:       (status)      => api.get(`/orders/status/${status}`),
+  getAvailable:      ()            => api.get('/orders/available'),
+  update:            (id, data)    => api.put(`/orders/${id}`, data),
+  cancel:            (id, reason)  => api.put(`/orders/${id}/cancel`, { reason }),
+  accept:            (id)          => api.put(`/orders/${id}/accept`),
+  checkAvailability: (params)      => api.get('/orders/check-availability', { params }),
 };
 
 // ─── Riders ────────────────────────────────────────────────────────────────
 export const ridersAPI = {
-  getAll: () => api.get('/riders'),
-  getAvailable: () => api.get('/riders/available'),
-  getById: (id) => api.get(`/riders/${id}`),
-  approveKyc: (id) => api.put(`/riders/${id}/kyc/approve`),
-  rejectKyc: (id) => api.put(`/riders/${id}/kyc/reject`),
-  approveOnboarding: (id) => api.put(`/riders/${id}/onboarding/approve`),
-  rejectOnboarding: (id) => api.put(`/riders/${id}/onboarding/reject`),
-  assignOrder: (riderId, orderId) => api.post(`/riders/${riderId}/assign/${orderId}`),
-  getPerformance: (id) => api.get(`/riders/${id}/performance`),
-  rate: (id, rating, options = {}) => api.post(`/riders/${id}/rate`, { rating, ...options }),
-  getRatings: (id) => api.get(`/riders/${id}/ratings`),
-  getRoutes: (id) => api.get(`/riders/${id}/routes`),
+  getAll:             ()               => api.get('/riders'),
+  getAvailable:       ()               => api.get('/riders/available'),
+  getById:            (id)             => api.get(`/riders/${id}`),
+  approveKyc:         (id)             => api.put(`/riders/${id}/kyc/approve`),
+  rejectKyc:          (id)             => api.put(`/riders/${id}/kyc/reject`),
+  approveOnboarding:  (id)             => api.put(`/riders/${id}/onboarding/approve`),
+  rejectOnboarding:   (id)             => api.put(`/riders/${id}/onboarding/reject`),
+  assignOrder:        (riderId, orderId)=> api.post(`/riders/${riderId}/assign/${orderId}`),
+  getPerformance:     (id)             => api.get(`/riders/${id}/performance`),
+  rate:               (id, rating, opts={}) => api.post(`/riders/${id}/rate`, { rating, ...opts }),
+  getRatings:         (id)             => api.get(`/riders/${id}/ratings`),
+  getRoutes:          (id)             => api.get(`/riders/${id}/routes`),
 };
 
 // ─── Offers ────────────────────────────────────────────────────────────────
 export const offersAPI = {
-  getAll: () => api.get('/offers'),
-  getByCode: (code) => api.get(`/offers/code/${code}`),
-  create: (data) => api.post('/offers', data),
-  deactivate: (id) => api.delete(`/offers/${id}`),
+  getAll:     ()     => api.get('/offers'),
+  getByCode:  (code) => api.get(`/offers/code/${code}`),
+  create:     (data) => api.post('/offers', data),
+  deactivate: (id)   => api.delete(`/offers/${id}`),
 };
 
 // ─── Pricing ───────────────────────────────────────────────────────────────
 export const pricingAPI = {
-  getActive: () => api.get('/pricing/active'),
-  getAll: () => api.get('/pricing'),
-  create: (data) => api.post('/pricing', data),
-  estimate: (data) => api.post('/pricing/estimate', data),
+  getActive:  ()          => api.get('/pricing/active'),
+  getAll:     ()          => api.get('/pricing'),
+  create:     (data)      => api.post('/pricing', data),
+  cleanup:    ()          => api.post('/pricing/cleanup'),
+  activate:   (id)        => api.patch(`/pricing/${id}/activate`),
+  deactivate: (id)        => api.patch(`/pricing/${id}/deactivate`),
+  estimate:   (data)      => api.post('/pricing/estimate', data),
+  getGrids:   ()          => api.get('/pricing/grids'),
+  upsertGrid: (data)      => api.post('/pricing/grids', data),
+  deleteGrid: (gridId)    => api.delete(`/pricing/grids/${gridId}`),
+  resolveGrid:(lat, lng)  => api.get(`/pricing/grids/resolve?lat=${lat}&lng=${lng}`),
 };
 
 // ─── Payments ──────────────────────────────────────────────────────────────
 export const paymentsAPI = {
-  getStatus: (paymentId) => api.get(`/payments/${paymentId}/status`),
-  refund: (paymentId, amount) => api.post(`/payments/${paymentId}/refund`, { refundAmount: amount }),
+  getStatus: (paymentId)        => api.get(`/payments/${paymentId}/status`),
+  refund:    (paymentId, amount) => api.post(`/payments/${paymentId}/refund`, { refundAmount: amount }),
 };
 
 // ─── Disputes ──────────────────────────────────────────────────────────────
 export const disputesAPI = {
-  getAll: (status) => api.get(`/disputes${status ? `?status=${status}` : ''}`),
-  getById: (id) => api.get(`/disputes/${id}`),
-  review: (id) => api.put(`/disputes/${id}/review`),
-  resolve: (id, data) => api.put(`/disputes/${id}/resolve`, data),
-  reject: (id, adminNote) => api.put(`/disputes/${id}/reject`, { adminNote }),
+  getAll:  (status)     => api.get(`/disputes${status ? `?status=${status}` : ''}`),
+  getById: (id)         => api.get(`/disputes/${id}`),
+  review:  (id)         => api.put(`/disputes/${id}/review`),
+  resolve: (id, data)   => api.put(`/disputes/${id}/resolve`, data),
+  reject:  (id, note)   => api.put(`/disputes/${id}/reject`, { adminNote: note }),
 };
 
 // ─── Notifications ─────────────────────────────────────────────────────────
 export const notificationsAPI = {
-  getAll:       (limit = 40) => api.get(`/notifications?limit=${limit}`),
-  getCount:     ()           => api.get('/notifications/count'),
-  markSeen:     (id)         => api.put(`/notifications/${id}/seen`),
-  markAllSeen:  ()           => api.put('/notifications/seen-all'),
+  getAll:      (limit=40) => api.get(`/notifications?limit=${limit}`),
+  getCount:    ()         => api.get('/notifications/count'),
+  markSeen:    (id)       => api.put(`/notifications/${id}/seen`),
+  markAllSeen: ()         => api.put('/notifications/seen-all'),
 };
 
 // ─── Tracking ──────────────────────────────────────────────────────────────
 export const trackingAPI = {
-  getAll:    () => api.get('/tracking/locations'),
-  getById:   (riderId) => api.get(`/tracking/locations/${riderId}`),
+  getAll:  ()       => api.get('/tracking/locations'),
+  getById: (riderId)=> api.get(`/tracking/locations/${riderId}`),
 };
 
 // ─── Files ─────────────────────────────────────────────────────────────────
@@ -145,17 +148,53 @@ export const filesAPI = {
 };
 
 // ─── Earnings & Withdrawals ────────────────────────────────────────────────
+// Server routes:
+//   GET  /earnings/riders/:riderId/summary         → per-rider summary
+//   GET  /earnings/riders/:riderId                 → per-rider transactions
+//   GET  /earnings/riders/:riderId/withdrawals     → per-rider withdrawals
+//   POST /earnings/riders/:riderId/credit          → admin manual credit
+//   GET  /earnings/withdrawals?status=PENDING      → all withdrawal requests
+//   GET  /earnings/withdrawals/:id                 → single withdrawal
+//   PUT  /earnings/withdrawals/:id/process         → mark as PAID
+//   PUT  /earnings/withdrawals/:id/reject          → reject + refund
 export const earningsAPI = {
-  // Per-rider views
-  getRiderSummary:    (riderId)             => api.get(`/earnings/riders/${riderId}/summary`),
-  getRiderEarnings:   (riderId, limit = 50) => api.get(`/earnings/riders/${riderId}?limit=${limit}`),
-  getRiderWithdrawals:(riderId)             => api.get(`/earnings/riders/${riderId}/withdrawals`),
-  creditRider:        (riderId, data)       => api.post(`/earnings/riders/${riderId}/credit`, data),
-  // All withdrawal requests (admin-wide)
-  getAllWithdrawals:   (status)             => api.get(`/earnings/withdrawals${status && status !== 'ALL' ? '?status=' + status : ''}`),
-  getWithdrawal:      (id)                 => api.get(`/earnings/withdrawals/${id}`),
-  processWithdrawal:  (id, data)           => api.put(`/earnings/withdrawals/${id}/process`, data),
-  rejectWithdrawal:   (id, reason)         => api.put(`/earnings/withdrawals/${id}/reject`, { reason }),
+  // Per-rider views (used in RiderEarningsPanel inside EarningsPage)
+  getRiderSummary:     (riderId)             => api.get(`/earnings/riders/${riderId}/summary`),
+  getRiderEarnings:    (riderId, limit = 50) => api.get(`/earnings/riders/${riderId}?limit=${limit}`),
+  getRiderWithdrawals: (riderId)             => api.get(`/earnings/riders/${riderId}/withdrawals`),
+
+  // Admin: manually credit earnings (bonus, correction, etc.)
+  // body: { orderId, grossAmount, description? }
+  // Note: server uses orderId; pass a custom label as orderId for manual credits
+  creditRider: (riderId, data) =>
+    api.post(`/earnings/riders/${riderId}/credit`, data),
+
+  // Admin-wide withdrawal management
+  getAllWithdrawals: (status) =>
+    api.get(`/earnings/withdrawals${status && status !== 'ALL' ? '?status=' + status : ''}`),
+
+  getWithdrawal: (id) =>
+    api.get(`/earnings/withdrawals/${id}`),
+
+  // body: { paidAmount, paymentScreenshotUrl, transactionReference?, paymentNotes? }
+  processWithdrawal: (id, data) =>
+    api.put(`/earnings/withdrawals/${id}/process`, data),
+
+  // body: { reason }  — also passes { reason } correctly to server
+  rejectWithdrawal: (id, reason) =>
+    api.put(`/earnings/withdrawals/${id}/reject`, { reason }),
+};
+
+// ─── Security Deposit ──────────────────────────────────────────────────────
+export const securityDepositAPI = {
+  getConfig:  ()               => api.get('/security-deposit/config'),
+  setConfig:  (data)           => api.put('/security-deposit/config', data),
+  enable:     ()               => api.put('/security-deposit/config/enable'),
+  disable:    ()               => api.put('/security-deposit/config/disable'),
+  getAll:     (status)         => api.get(`/security-deposit${status ? `?status=${status}` : ''}`),
+  getByRider: (riderId)        => api.get(`/security-deposit/${riderId}`),
+  refund:     (riderId, note)  => api.post(`/security-deposit/${riderId}/refund`,  note ? { note } : {}),
+  forfeit:    (riderId, note)  => api.post(`/security-deposit/${riderId}/forfeit`, note ? { note } : {}),
 };
 
 export default api;

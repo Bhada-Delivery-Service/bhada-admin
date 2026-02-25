@@ -30,11 +30,12 @@ const navSections = [
   {
     label: 'Finance',
     items: [
-      { to: '/earnings',     icon: IndianRupee,      label: 'Rider Earnings' },
-      { to: '/withdrawals',  icon: ArrowDownToLine,  label: 'Withdrawals' },
-      { to: '/payments',     icon: CreditCard,       label: 'Payments' },
-      { to: '/pricing',      icon: BadgePercent,     label: 'Pricing' },
-      { to: '/offers',       icon: Tag,              label: 'Offers' },
+      { to: '/earnings',          icon: IndianRupee,      label: 'Rider Earnings' },
+      { to: '/withdrawals',       icon: ArrowDownToLine,  label: 'Withdrawals' },
+      { to: '/security-deposits', icon: ShieldCheck,      label: 'Security Deposits' },
+      { to: '/payments',          icon: CreditCard,       label: 'Payments' },
+      { to: '/pricing',           icon: BadgePercent,     label: 'Pricing' },
+      { to: '/offers',            icon: Tag,              label: 'Offers' },
     ],
   },
   {
@@ -82,6 +83,7 @@ export default function Layout() {
       '/payments':    'Payments',
       '/withdrawals': 'Withdrawals',
       '/earnings':    'Rider Earnings',
+      '/security-deposits': 'Security Deposits',
     };
     return map[path] || 'Dashboard';
   };
