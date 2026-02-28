@@ -176,7 +176,6 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
     const handler = (msg) => {
       if (msg.disputeId === disputeId) {
         setMessages(prev => {
-          // Avoid duplicate if our own message was already added optimistically
           if (prev.find(m => m.messageId === msg.messageId)) return prev;
           return [...prev, msg];
         });
@@ -246,7 +245,7 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
             <div className="modal-title">
               Dispute Chat — <span className="code" style={{ fontSize: 12 }}>#{(disputeId || '').slice(-10).toUpperCase()}</span>
             </div>
-            <span className={`badge ${dispute?.status === 'OPEN' ? 'badge-open' : dispute?.status === 'RESOLVED' ? '' : ''}`} style={{ fontSize: 11 }}>
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--bg-subtle)', color: 'var(--text-2)', border: '1px solid var(--border)' }}>
               {dispute?.status?.replace(/_/g, ' ')}
             </span>
           </div>
@@ -256,10 +255,12 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
           </div>
         </div>
 
-        {/* Body: chat + order info */}
+        {/* Body: chat + order info sidebar */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
           {/* Chat area */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12, paddingBottom: 8 }}>
               {loading ? (
@@ -295,7 +296,13 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
             )}
 
             {/* Input area */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: '10px 12px', borderTop: '1px solid var(--border)', background: 'var(--bg-surface)', flexShrink: 0 }}>
+            <div style={{
+              display: 'flex', alignItems: 'flex-end', gap: 8,
+              padding: '10px 12px',
+              borderTop: '1px solid var(--border)',
+              background: 'var(--bg-surface)',
+              flexShrink: 0,
+            }}>
               <input
                 ref={fileRef}
                 type="file"
@@ -304,31 +311,55 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
                 style={{ display: 'none' }}
                 onChange={handleFileUpload}
               />
+
+              {/* Attach button — fixed size */}
               <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
                 title="Attach image or video"
+                style={{ flexShrink: 0, width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {uploading ? <div className="loader" style={{ width: 14, height: 14 }} /> : <Image size={15} />}
+                {uploading
+                  ? <div className="loader" style={{ width: 14, height: 14 }} />
+                  : <Image size={15} />
+                }
               </button>
+
+              {/* Textarea */}
               <textarea
                 className="form-textarea"
-                style={{ flex: 1, minHeight: 38, maxHeight: 100, resize: 'none', margin: 0 }}
+                style={{
+                  flex: 1,
+                  minHeight: 38,
+                  maxHeight: 100,
+                  resize: 'none',
+                  margin: 0,
+                  lineHeight: '20px',
+                  padding: '9px 12px',
+                  boxSizing: 'border-box',
+                }}
                 placeholder="Type a message… (Enter to send)"
                 value={text}
                 onChange={e => setText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={1}
               />
+
+              {/* Send button — fixed size */}
               <button
                 className="btn btn-primary btn-sm"
                 onClick={handleSend}
                 disabled={sending || (!text.trim() && mediaUrls.length === 0)}
+                style={{ flexShrink: 0, width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {sending ? <div className="loader" style={{ width: 14, height: 14, borderTopColor: '#fff' }} /> : <Send size={13} />}
+                {sending
+                  ? <div className="loader" style={{ width: 14, height: 14, borderTopColor: '#fff' }} />
+                  : <Send size={13} />
+                }
               </button>
             </div>
+
           </div>
 
           {/* Order info sidebar */}

@@ -32,7 +32,8 @@ const navSections = [
     items: [
       { to: '/earnings',          icon: IndianRupee,      label: 'Rider Earnings' },
       { to: '/withdrawals',       icon: ArrowDownToLine,  label: 'Withdrawals' },
-      { to: '/security-deposits', icon: ShieldCheck,      label: 'Security Deposits' },
+      { to: '/security-deposits', icon: ShieldCheck,  label: 'Security Deposits' },
+      { to: '/handling-charges',  icon: IndianRupee,  label: 'Handling Charges' },
       { to: '/payments',          icon: CreditCard,       label: 'Payments' },
       { to: '/pricing',           icon: BadgePercent,     label: 'Pricing' },
       { to: '/offers',            icon: Tag,              label: 'Offers' },
@@ -84,6 +85,7 @@ export default function Layout() {
       '/withdrawals': 'Withdrawals',
       '/earnings':    'Rider Earnings',
       '/security-deposits': 'Security Deposits',
+      '/handling-charges':  'Handling Charges',
     };
     return map[path] || 'Dashboard';
   };
