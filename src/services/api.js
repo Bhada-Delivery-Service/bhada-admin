@@ -198,4 +198,16 @@ export const handlingChargeAPI = {
   seedDefaults: ()                       => api.post('/handling-charges/seed'),
 };
 
+// ─── Service Area Management ───────────────────────────────────────────────
+export const serviceAreaAPI = {
+  getAll:      ()                        => api.get('/service-areas'),
+  getActive:   ()                        => api.get('/service-areas/active'),
+  upsert:      (data)                    => api.post('/service-areas', data),
+  activate:    (gridId)                  => api.patch(`/service-areas/${gridId}/activate`),
+  deactivate:  (gridId)                  => api.patch(`/service-areas/${gridId}/deactivate`),
+  delete:      (gridId)                  => api.delete(`/service-areas/${gridId}`),
+  resolve:     (lat, lng)                => api.get(`/service-areas/resolve?lat=${lat}&lng=${lng}`),
+  validate:    (pLat, pLng, dLat, dLng) => api.get(`/service-areas/validate?pickupLat=${pLat}&pickupLng=${pLng}&dropLat=${dLat}&dropLng=${dLng}`),
+};
+
 export default api;

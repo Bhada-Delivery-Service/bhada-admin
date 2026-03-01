@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
   Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
-  IndianRupee, ArrowDownToLine,
+  IndianRupee, ArrowDownToLine, MapPin,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -25,6 +25,7 @@ const navSections = [
       { to: '/riders',   icon: Bike,           label: 'Riders' },
       { to: '/tracking', icon: Navigation,      label: 'Live Tracking' },
       { to: '/disputes', icon: AlertTriangle,  label: 'Disputes' },
+      { to: '/service-areas', icon: MapPin,    label: 'Service Areas' },
     ],
   },
   {

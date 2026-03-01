@@ -18,6 +18,7 @@ import WithdrawalsPage from './pages/WithdrawalsPage';
 import EarningsPage from './pages/EarningsPage';
 import SecurityDepositsPage from './pages/SecurityDepositsPage';
 import HandlingChargePage from './pages/HandlingChargePage';
+import ServiceAreaPage from './pages/ServiceAreaPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ function AppWithNotifications() {
           <Route path="earnings"     element={<EarningsPage />} />
           <Route path="security-deposits" element={<SecurityDepositsPage />} />
           <Route path="handling-charges"  element={<HandlingChargePage />} />
+          <Route path="service-areas"     element={<ServiceAreaPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
