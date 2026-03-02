@@ -19,6 +19,8 @@ import EarningsPage from './pages/EarningsPage';
 import SecurityDepositsPage from './pages/SecurityDepositsPage';
 import HandlingChargePage from './pages/HandlingChargePage';
 import ServiceAreaPage from './pages/ServiceAreaPage';
+import ProfilePage from './pages/ProfilePage';
+import UsersPage from './pages/UsersPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,6 +49,7 @@ function AppWithNotifications() {
           <Route path="orders"   element={<OrdersPage />} />
           <Route path="riders"   element={<RidersPage />} />
           <Route path="admins"   element={<AdminsPage />} />
+          <Route path="users"    element={<UsersPage />} />
           <Route path="pricing"  element={<PricingPage />} />
           <Route path="offers"   element={<OffersPage />} />
           <Route path="disputes" element={<DisputesPage />} />
@@ -57,6 +60,7 @@ function AppWithNotifications() {
           <Route path="security-deposits" element={<SecurityDepositsPage />} />
           <Route path="handling-charges"  element={<HandlingChargePage />} />
           <Route path="service-areas"     element={<ServiceAreaPage />} />
+          <Route path="profile"           element={<ProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

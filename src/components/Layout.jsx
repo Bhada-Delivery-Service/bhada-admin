@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
   Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
-  IndianRupee, ArrowDownToLine, MapPin,
+  IndianRupee, ArrowDownToLine, MapPin, UserCircle, Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -23,6 +23,7 @@ const navSections = [
     items: [
       { to: '/orders',   icon: Package,        label: 'Orders' },
       { to: '/riders',   icon: Bike,           label: 'Riders' },
+      { to: '/users',    icon: Users,          label: 'Users' },
       { to: '/tracking', icon: Navigation,      label: 'Live Tracking' },
       { to: '/disputes', icon: AlertTriangle,  label: 'Disputes' },
       { to: '/service-areas', icon: MapPin,    label: 'Service Areas' },
@@ -43,7 +44,8 @@ const navSections = [
   {
     label: 'Administration',
     items: [
-      { to: '/admins', icon: ShieldCheck, label: 'Admins' },
+      { to: '/admins',  icon: ShieldCheck,  label: 'Admins' },
+      { to: '/profile', icon: UserCircle,   label: 'My Profile' },
     ],
   },
 ];
@@ -78,6 +80,7 @@ export default function Layout() {
       '/':          'Dashboard',
       '/orders':    'Orders',
       '/riders':    'Riders',
+      '/users':    'User Management',
       '/admins':    'Admin Management',
       '/pricing':   'Pricing',
       '/offers':    'Offers',
@@ -132,12 +135,18 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <div className="sidebar-avatar">{getInitials(user)}</div>
+          <div
+            className="sidebar-user"
+            onClick={() => { navigate('/profile'); setSidebarOpen(false); }}
+            style={{ cursor: 'pointer', borderRadius: 8, transition: 'background .15s' }}
+            title="My Profile"
+          >
+            <div className="sidebar-avatar" style={{ border: '2px solid var(--accent)' }}>{getInitials(user)}</div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">{user?.email || user?.uid || 'Admin'}</div>
               <div className="sidebar-user-role">{getRoleLabel(user)}</div>
             </div>
+            <UserCircle size={14} style={{ marginLeft: 'auto', color: 'var(--text-2)', flexShrink: 0 }} />
           </div>
           <button
             className="btn btn-ghost btn-sm"

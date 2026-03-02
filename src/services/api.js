@@ -54,6 +54,11 @@ export const adminsAPI = {
   create:         (data)        => api.post('/admins', data),
   update:         (id, data)    => api.put(`/admins/${id}`, data),
   delete:         (id)          => api.delete(`/admins/${id}`),
+  // ── Own profile ──
+  getMe:              ()       => api.get('/admins/me'),
+  updateMe:           (data)   => api.put('/admins/me', data),
+  storePasswordOtp:   (otp)    => api.post('/admins/me/store-password-otp', { otp }),
+  changePassword:     (data)   => api.post('/admins/me/change-password', data),
 };
 
 // ─── Orders ────────────────────────────────────────────────────────────────
@@ -196,6 +201,23 @@ export const handlingChargeAPI = {
   upsert:    (sizeType, data)            => api.put(`/handling-charges/${sizeType}`, data),
   toggle:    (sizeType)                  => api.patch(`/handling-charges/${sizeType}/toggle`),
   seedDefaults: ()                       => api.post('/handling-charges/seed'),
+};
+
+// ─── Users ────────────────────────────────────────────────────────────────
+export const usersAPI = {
+  getAll:     (params = {}) => api.get('/users', { params }),
+  getStats:   ()            => api.get('/users/stats'),
+  getById:    (id)          => api.get(`/users/${id}`),
+  create:     (data)        => api.post('/users', data),
+  update:     (id, data)    => api.put(`/users/${id}`, data),
+  delete:     (id)          => api.delete(`/users/${id}`),
+  softDelete: (id)          => api.put(`/users/${id}/soft-delete`),
+  block:      (id, data)    => api.put(`/users/${id}/block`, data),
+  unblock:    (id)          => api.put(`/users/${id}/unblock`),
+  disable:    (id)          => api.put(`/users/${id}/disable`),
+  enable:     (id)          => api.put(`/users/${id}/enable`),
+  addNote:    (id, note)    => api.post(`/users/${id}/notes`, { note }),
+  deleteNote: (id, noteId)  => api.delete(`/users/${id}/notes/${noteId}`),
 };
 
 // ─── Service Area Management ───────────────────────────────────────────────
