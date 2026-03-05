@@ -82,11 +82,34 @@ export function NotificationProvider({ children, accessToken }) {
       setUnseenCount(unseen);
     });
 
+    // ── Real-time data sync events → dispatch as window CustomEvents
+    // so individual pages (OrdersPage, DisputesPage, RefundsPage, etc.)
+    // can subscribe without prop drilling or an extra context layer.
+    socket.on('order:updated', (data) => {
+      window.dispatchEvent(new CustomEvent('ws:order:updated', { detail: data }));
+    });
+
+    socket.on('dispute:updated', (data) => {
+      window.dispatchEvent(new CustomEvent('ws:dispute:updated', { detail: data }));
+    });
+
+    socket.on('refund:updated', (data) => {
+      window.dispatchEvent(new CustomEvent('ws:refund:updated', { detail: data }));
+    });
+
+    socket.on('rider:updated', (data) => {
+      window.dispatchEvent(new CustomEvent('ws:rider:updated', { detail: data }));
+    });
+
     fetchNotifications();
 
     return () => {
       socket.off('notification:new');
       socket.off('notification:count');
+      socket.off('order:updated');
+      socket.off('dispute:updated');
+      socket.off('refund:updated');
+      socket.off('rider:updated');
     };
   }, [accessToken, fetchNotifications]);
 

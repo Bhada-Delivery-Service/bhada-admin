@@ -78,6 +78,43 @@ export default function DashboardPage() {
     });
   }, []);
 
+  // ── Real-time: keep dashboard stats live ───────────────────────────────────
+  useEffect(() => {
+    const onOrder = (e) => {
+      const updated = e.detail;
+      if (!updated?.orderId) return;
+      setOrders(prev => {
+        const exists = prev.some(o => o.orderId === updated.orderId);
+        if (exists) return prev.map(o => o.orderId === updated.orderId ? { ...o, ...updated } : o);
+        return [updated, ...prev]; // new order
+      });
+    };
+    const onDispute = (e) => {
+      const updated = e.detail;
+      if (!updated?.disputeId && !updated?.id) return;
+      const id = updated.disputeId || updated.id;
+      setDisputes(prev => {
+        const exists = prev.some(d => (d.disputeId || d.id) === id);
+        if (exists) return prev.map(d => (d.disputeId || d.id) === id ? { ...d, ...updated } : d);
+        return [updated, ...prev]; // new dispute
+      });
+    };
+    const onRider = (e) => {
+      const updated = e.detail;
+      const rid = updated?.uid || updated?.id;
+      if (!rid) return;
+      setRiders(prev => prev.map(r => (r.uid || r.id) === rid ? { ...r, ...updated } : r));
+    };
+    window.addEventListener('ws:order:updated',   onOrder);
+    window.addEventListener('ws:dispute:updated', onDispute);
+    window.addEventListener('ws:rider:updated',   onRider);
+    return () => {
+      window.removeEventListener('ws:order:updated',   onOrder);
+      window.removeEventListener('ws:dispute:updated', onDispute);
+      window.removeEventListener('ws:rider:updated',   onRider);
+    };
+  }, []);
+
   const count        = (s) => orders.filter(o => o.status === s).length;
   const riderOnline  = riders.filter(r => r.availabilityStatus === 'ONLINE' || r.isOnline).length;
   const openDisputes = disputes.filter(d => d.status === 'OPEN').length;

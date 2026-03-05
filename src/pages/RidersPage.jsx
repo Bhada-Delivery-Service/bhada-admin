@@ -183,6 +183,19 @@ export default function RidersPage() {
     return () => socket.off('notification:new', onNotification);
   }, [fetchRiders]);
 
+  /* ── Real-time: update rider row and open detail modal via ws:rider:updated */
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      const rid = updated?.uid || updated?.id;
+      if (!rid) return;
+      setRiders(prev => prev.map(r => (r.uid || r.id) === rid ? { ...r, ...updated } : r));
+      setSelected(prev => prev && (prev.uid || prev.id) === rid ? { ...prev, ...updated } : prev);
+    };
+    window.addEventListener('ws:rider:updated', handler);
+    return () => window.removeEventListener('ws:rider:updated', handler);
+  }, []);
+
   /* ── Also update the detail modal in real-time if a rider is open ───────── */
   useEffect(() => {
     if (!selected) return;

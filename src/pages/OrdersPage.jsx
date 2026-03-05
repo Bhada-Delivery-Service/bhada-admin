@@ -586,6 +586,28 @@ export default function OrdersPage() {
 
   useEffect(() => { fetchOrders(); }, [statusFilter]);
 
+  // ── Real-time: update order list and open detail modal without full reload ──
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.orderId) return;
+      // Update existing row in list
+      setOrders(prev => {
+        const exists = prev.some(o => o.orderId === updated.orderId);
+        if (exists) return prev.map(o => o.orderId === updated.orderId ? { ...o, ...updated } : o);
+        // New order (just placed) — prepend to top of list if not filtered out
+        if (!statusFilter || statusFilter === 'ALL' || updated.status === statusFilter) {
+          return [updated, ...prev];
+        }
+        return prev;
+      });
+      // If this order is currently open in the detail modal, update it too
+      setSelected(prev => prev?.orderId === updated.orderId ? { ...prev, ...updated } : prev);
+    };
+    window.addEventListener('ws:order:updated', handler);
+    return () => window.removeEventListener('ws:order:updated', handler);
+  }, [statusFilter]);
+
   const handleSearch = (e) => { e.preventDefault(); fetchOrders(); };
 
   const handleCancel = async (orderId, reason) => {

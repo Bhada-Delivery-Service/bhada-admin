@@ -232,4 +232,19 @@ export const serviceAreaAPI = {
   validate:    (pLat, pLng, dLat, dLng) => api.get(`/service-areas/validate?pickupLat=${pLat}&pickupLng=${pLng}&dropLat=${dLat}&dropLng=${dLng}`),
 };
 
+// ─── Cancellation Policy ──────────────────────────────────────────────────
+export const cancellationPolicyAPI = {
+  get:    ()     => api.get('/cancellation-policy'),
+  update: (data) => api.put('/cancellation-policy', data),
+};
+
+// ─── Refund Requests ─────────────────────────────────────────────────────
+export const refundsAPI = {
+  getAll:        (status)    => api.get(`/refunds${status && status !== 'ALL' ? `?status=${status}` : ''}`),
+  getById:       (id)        => api.get(`/refunds/${id}`),
+  getByOrder:    (orderId)   => api.get(`/refunds/order/${orderId}`),
+  markRefunded:  (id, data)  => api.put(`/refunds/${id}/mark-refunded`, data),
+  skip:          (id, notes) => api.put(`/refunds/${id}/skip`, { notes }),
+};
+
 export default api;

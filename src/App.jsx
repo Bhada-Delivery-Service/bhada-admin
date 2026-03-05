@@ -21,6 +21,8 @@ import HandlingChargePage from './pages/HandlingChargePage';
 import ServiceAreaPage from './pages/ServiceAreaPage';
 import ProfilePage from './pages/ProfilePage';
 import UsersPage from './pages/UsersPage';
+import RefundsPage from './pages/RefundsPage';
+import CancellationPolicyPage from './pages/CancellationPolicyPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -61,6 +63,8 @@ function AppWithNotifications() {
           <Route path="handling-charges"  element={<HandlingChargePage />} />
           <Route path="service-areas"     element={<ServiceAreaPage />} />
           <Route path="profile"           element={<ProfilePage />} />
+          <Route path="refunds"           element={<RefundsPage />} />
+          <Route path="cancellation-policy" element={<CancellationPolicyPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

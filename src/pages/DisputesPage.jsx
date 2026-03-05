@@ -288,6 +288,26 @@ export default function DisputesPage() {
 
   useEffect(() => { fetchDisputes(); }, [statusFilter]);
 
+  // ── Real-time: update dispute status badges without full reload ────────────
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.disputeId && !updated?.id) return;
+      const id = updated.disputeId || updated.id;
+      setDisputes(prev => {
+        const exists = prev.some(d => (d.disputeId || d.id) === id);
+        if (exists) return prev.map(d => (d.disputeId || d.id) === id ? { ...d, ...updated } : d);
+        // New dispute raised — prepend if filter allows
+        if (!statusFilter || statusFilter === 'ALL' || updated.status === statusFilter) {
+          return [updated, ...prev];
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('ws:dispute:updated', handler);
+    return () => window.removeEventListener('ws:dispute:updated', handler);
+  }, [statusFilter]);
+
   const filtered = disputes.filter(d => {
     const q = search.toLowerCase();
     return !q || (d.disputeId || d.id || '').toLowerCase().includes(q) || (d.reason || '').toLowerCase().includes(q);

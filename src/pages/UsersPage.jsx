@@ -62,6 +62,22 @@ function CopyBtn({ text }) {
   );
 }
 
+function CvScoreBadge({ score }) {
+  const cv = score ?? 100;
+  const blocked = cv < 50;
+  const warning = cv < 70 && cv >= 50;
+  return (
+    <span style={{
+      background: blocked ? 'rgba(255,77,109,0.12)' : warning ? 'rgba(255,193,7,0.12)' : 'var(--green-dim)',
+      color: blocked ? '#ff4d6d' : warning ? '#ffc107' : 'var(--green)',
+      padding: '2px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+      fontFamily: 'var(--font-mono)', letterSpacing: '0.04em', display: 'inline-flex', alignItems: 'center', gap: 4,
+    }}>
+      {blocked && '⚠ '}CV {cv}/100
+    </span>
+  );
+}
+
 function StatCard({ label, value, color }) {
   return (
     <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 22px', minWidth: 120 }}>
@@ -219,6 +235,16 @@ function UserDrawer({ user, onClose, onRefresh }) {
                   <InfoRow label="Last Logout" value={fmtTime(user.lastLogoutAt)} />
                   <InfoRow label="Orders Placed" value={user.totalOrdersPlaced ?? 0} />
                   <InfoRow label="Orders Received" value={user.totalOrdersReceived ?? 0} />
+                  <InfoRow label="CV Score" value={
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CvScoreBadge score={user.cvScore} />
+                      {user.codBlocked && (
+                        <span style={{ fontSize: 11, background: 'rgba(255,77,109,0.12)', color: '#ff4d6d', padding: '2px 8px', borderRadius: 12, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                          COD BLOCKED
+                        </span>
+                      )}
+                    </span>
+                  } />
                   {user.adminNote && (
                     <div style={{ background: 'rgba(255,193,7,0.08)', border: '1px solid rgba(255,193,7,0.2)', borderRadius: 8, padding: 12, marginTop: 8 }}>
                       <div style={{ fontSize: 11, color: '#ffc107', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>ADMIN NOTE</div>
@@ -498,17 +524,17 @@ export default function UsersPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              {['User', 'Phone', 'Email', 'Status', 'Orders', 'Joined', ''].map(h => (
+              {['User', 'Phone', 'Email', 'Status', 'Orders', 'CV Score', 'Joined', ''].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: 'var(--text-2)', fontWeight: 600, fontFamily: 'var(--font-mono)', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-2)' }}>Loading…</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-2)' }}>Loading…</td></tr>
             )}
             {!loading && users.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-2)' }}>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-2)' }}>
                 <Users size={28} style={{ opacity: 0.3, marginBottom: 8 }} /><br />No users found
               </td></tr>
             )}
@@ -533,6 +559,12 @@ export default function UsersPage() {
                 <td style={{ padding: '11px 14px' }}><StatusBadge status={u.status} /></td>
                 <td style={{ padding: '11px 14px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-1)' }}>
                   {(u.totalOrdersPlaced || 0) + (u.totalOrdersReceived || 0)}
+                </td>
+                <td style={{ padding: '11px 14px', textAlign: 'center' }}>
+                  <CvScoreBadge score={u.cvScore} />
+                  {u.codBlocked && (
+                    <div style={{ fontSize: 10, color: '#ff4d6d', fontFamily: 'var(--font-mono)', marginTop: 2 }}>COD BLOCKED</div>
+                  )}
                 </td>
                 <td style={{ padding: '11px 14px', color: 'var(--text-2)', fontSize: 12 }}>{fmt(u.createdAt)}</td>
                 <td style={{ padding: '11px 14px' }}>

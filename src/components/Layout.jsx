@@ -5,6 +5,7 @@ import {
   Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
   IndianRupee, ArrowDownToLine, MapPin, UserCircle, Users,
+  RotateCcw, Settings2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -34,6 +35,7 @@ const navSections = [
     items: [
       { to: '/earnings',          icon: IndianRupee,      label: 'Rider Earnings' },
       { to: '/withdrawals',       icon: ArrowDownToLine,  label: 'Withdrawals' },
+      { to: '/refunds',           icon: RotateCcw,        label: 'Refunds' },
       { to: '/security-deposits', icon: ShieldCheck,  label: 'Security Deposits' },
       { to: '/handling-charges',  icon: IndianRupee,  label: 'Handling Charges' },
       { to: '/payments',          icon: CreditCard,       label: 'Payments' },
@@ -44,6 +46,7 @@ const navSections = [
   {
     label: 'Administration',
     items: [
+      { to: '/cancellation-policy', icon: Settings2,  label: 'Cancellation Policy' },
       { to: '/admins',  icon: ShieldCheck,  label: 'Admins' },
       { to: '/profile', icon: UserCircle,   label: 'My Profile' },
     ],
@@ -90,6 +93,8 @@ export default function Layout() {
       '/earnings':    'Rider Earnings',
       '/security-deposits': 'Security Deposits',
       '/handling-charges':  'Handling Charges',
+      '/refunds':           'Refunds',
+      '/cancellation-policy': 'Cancellation Policy',
     };
     return map[path] || 'Dashboard';
   };
