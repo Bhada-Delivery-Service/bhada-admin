@@ -218,8 +218,8 @@ function OrderDetailModal({ order, onClose, onCancel, cancelling }) {
 
   const id       = order.orderId || order.id;
   const billing  = order.billing || {};
-  const sender   = order.senderUser  || {};
-  const receiver = order.receiverUser || {};
+  const sender   = order.sender  || order.senderUser  || {};
+  const receiver = order.receiver || order.receiverUser || {};
   const rider    = order.assignedRider || {};
   const hasCoords = order.senderNode?.latitude && order.receiverNode?.latitude;
   const canCancel = !['DELIVERED','CANCELLED'].includes(order.status);
@@ -725,8 +725,8 @@ export default function OrdersPage() {
                 {orders.map(order => {
                   const id       = order.orderId || order.id;
                   const billing  = order.billing || {};
-                  const sender   = order.senderUser  || {};
-                  const receiver = order.receiverUser || {};
+                  const sender   = order.sender  || order.senderUser  || {};
+                  const receiver = order.receiver || order.receiverUser || {};
                   const rider    = order.assignedRider || {};
                   return (
                     <tr key={id}>
