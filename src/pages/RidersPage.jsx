@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { ridersAPI } from '../services/api';
 import { StatusBadge } from './DashboardPage';
 import { getSocket } from '../services/socketService';
+import RiderRatingModal from '../components/RiderRatingModal';
 
 /* ── tiny KYC doc viewer ────────────────────────────────────────────────── */
 function DocImage({ url, label }) {
@@ -144,8 +145,7 @@ export default function RidersPage() {
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState(null);
-  const [rateModal, setRateModal] = useState(null);
-  const [rating,    setRating]    = useState(5);
+  const [rateModal, setRateModal] = useState(null); // riderId string when open
 
   /* ── Fetch all riders ──────────────────────────────────────────────────── */
   const fetchRiders = useCallback(async (silent = false) => {
@@ -240,17 +240,6 @@ export default function RidersPage() {
   const handleRejectKyc         = (id) => act(() => ridersAPI.rejectKyc(id),         'KYC rejected');
   const handleApproveOnboarding = (id) => act(() => ridersAPI.approveOnboarding(id), 'Onboarding approved ✓');
   const handleRejectOnboarding  = (id) => act(() => ridersAPI.rejectOnboarding(id),  'Onboarding rejected');
-
-  const handleRate = async () => {
-    if (!rateModal) return;
-    try {
-      await ridersAPI.rate(rateModal, rating);
-      toast.success('Rating submitted');
-      setRateModal(null);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed');
-    }
-  };
 
   /* ── Filter ────────────────────────────────────────────────────────────── */
   const filtered = riders.filter(r => {
@@ -524,23 +513,11 @@ export default function RidersPage() {
 
       {/* ── Rate Modal ─────────────────────────────────────────────────────── */}
       {rateModal && (
-        <div className="modal-overlay" onClick={() => setRateModal(null)}>
-          <div className="modal" style={{ maxWidth: 360 }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">Rate Rider</div>
-              <button className="modal-close" onClick={() => setRateModal(null)}><X size={15} /></button>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Rating (0.0 – 5.0)</label>
-              <input type="number" className="form-input" min="0" max="5" step="0.1"
-                value={rating} onChange={e => setRating(parseFloat(e.target.value))} />
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => setRateModal(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleRate}>Submit Rating</button>
-            </div>
-          </div>
-        </div>
+        <RiderRatingModal
+          riderId={rateModal}
+          onClose={() => setRateModal(null)}
+          onSubmitted={() => { setRateModal(null); fetchRiders(true); }}
+        />
       )}
 
       <style>{`

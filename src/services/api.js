@@ -101,6 +101,7 @@ export const ridersAPI = {
   getPerformance:     (id)              => api.get(`/riders/${id}/performance`),
   rate:               (id, rating, opts={}) => api.post(`/riders/${id}/rate`, { rating, ...opts }),
   getRatings:         (id)              => api.get(`/riders/${id}/ratings`),
+  getRatingStats:     (id)              => api.get(`/riders/${id}/ratings`),  // summary included in same response
   getRoutes:          (id)              => api.get(`/riders/${id}/routes`),
 };
 

@@ -80,18 +80,24 @@ export default function RiderRatingModal({ riderId, onClose, onSubmitted }) {
   const [loadingStats, setLoadingStats] = useState(true);
   const [recentRatings, setRecentRatings] = useState([]);
 
-  // Load current rating stats and recent ratings
+  // Load current rating stats and recent ratings — both come from the same endpoint
   useEffect(() => {
     if (!riderId) return;
     setLoadingStats(true);
-    Promise.allSettled([
-      ridersAPI.getRatingStats(riderId),
-      ridersAPI.getRatings(riderId, 10),
-    ]).then(([statsRes, ratingsRes]) => {
-      if (statsRes.status === 'fulfilled') setStats(statsRes.value.data?.data);
-      if (ratingsRes.status === 'fulfilled') setRecentRatings(ratingsRes.value.data?.data || []);
-      setLoadingStats(false);
-    });
+    ridersAPI.getRatings(riderId)
+      .then(res => {
+        const payload = res.data?.data || {};
+        // Backend returns { ratings: [...], summary: { averageRating, totalRatings, distribution } }
+        const summary = payload.summary || {};
+        setStats({
+          averageRating: summary.averageRating || 0,
+          totalRatingsCount: summary.totalRatings || 0,
+          distribution: summary.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        });
+        setRecentRatings(payload.ratings || []);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStats(false));
   }, [riderId]);
 
   const handleSubmit = async () => {
@@ -199,10 +205,10 @@ export default function RiderRatingModal({ riderId, onClose, onSubmitted }) {
             </div>
             <div style={{ maxHeight: 140, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {recentRatings.map(r => (
-                <div key={r.id} style={{ background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+                <div key={r.ratingId || r.id} style={{ background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                     <span style={{ color: '#f59e0b', fontWeight: 600 }}>
-                      {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}
+                      {'★'.repeat(r.rating || r.stars)}{'☆'.repeat(5 - (r.rating || r.stars))}
                     </span>
                     <span style={{ fontSize: 10, color: 'var(--text-2)' }}>
                       {new Date(r.createdAt).toLocaleDateString()}
@@ -210,7 +216,7 @@ export default function RiderRatingModal({ riderId, onClose, onSubmitted }) {
                   </div>
                   {r.comment && <div style={{ color: 'var(--text-1)', fontSize: 11 }}>{r.comment}</div>}
                   <div style={{ fontSize: 10, color: 'var(--text-2)', marginTop: 2 }}>
-                    By {r.ratedByRole} · {r.ratedByUid?.slice(0, 8)}…
+                    By {r.ratedByUid?.slice(0, 8)}…{r.orderId ? ` · Order #${r.orderId.slice(-6).toUpperCase()}` : ''}
                   </div>
                 </div>
               ))}
