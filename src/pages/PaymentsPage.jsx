@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   CreditCard, Search, RefreshCw, X, TrendingUp,
   CheckCircle2, XCircle, Clock, RotateCcw, AlertCircle,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Banknote, QrCode, Eye, EyeOff, Package,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { paymentsAPI } from '../services/api';
+import { paymentsAPI, codPaymentsAPI, ordersAPI } from '../services/api';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,109 @@ const STATUS_CFG = {
 };
 
 const FILTERS = ['ALL', 'SUCCESS', 'PENDING', 'FAILED', 'REFUNDED', 'INITIATED'];
+
+const COD_STATUS_CFG = {
+  PENDING: { label: 'Pending',  cls: 'orange', Icon: Clock        },
+  PAID:    { label: 'Paid',     cls: 'green',  Icon: CheckCircle2 },
+  FAILED:  { label: 'Failed',   cls: 'red',    Icon: XCircle      },
+  EXPIRED: { label: 'Expired',  cls: 'red',    Icon: AlertCircle  },
+};
+
+// ─── COD Payment Row ──────────────────────────────────────────────────────────
+function CodPaymentRow({ record }) {
+  const [open, setOpen]         = useState(false);
+  const [qrVisible, setQrVisible] = useState(false);
+  const cfg = COD_STATUS_CFG[record.paymentStatus] || COD_STATUS_CFG.PENDING;
+  const { Icon } = cfg;
+
+  return (
+    <>
+      <tr style={{ cursor: 'pointer', background: open ? 'var(--bg-2)' : undefined }}
+        onClick={() => setOpen(o => !o)}>
+        <td>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+            #{(record.orderId || '').slice(-8).toUpperCase()}
+          </span>
+        </td>
+        <td>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 17, color: 'var(--text-0)' }}>
+            ₹{fmtInt(record.amount)}
+          </span>
+        </td>
+        <td>
+          <span className={`badge ${cfg.cls}`}>
+            <Icon size={9} /> {cfg.label}
+          </span>
+        </td>
+        <td style={{ fontSize: 12, color: 'var(--text-2)' }}>
+          {fmtDate(record.paymentAt || record.createdAt)}
+        </td>
+        <td>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+            {record.razorpayPaymentId
+              ? record.razorpayPaymentId.slice(-8).toUpperCase()
+              : record.razorpayQrId
+                ? `QR·${record.razorpayQrId.slice(-6).toUpperCase()}`
+                : '—'}
+          </span>
+        </td>
+        <td onClick={e => e.stopPropagation()}>
+          <button className="btn btn-ghost btn-sm btn-icon-sm" onClick={() => setOpen(o => !o)}>
+            {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
+        </td>
+      </tr>
+      {open && (
+        <tr style={{ background: 'var(--bg-2)' }}>
+          <td colSpan={6} style={{ paddingTop: 0, paddingBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, paddingTop: 12 }}>
+              {[
+                ['Order ID',       record.orderId],
+                ['Razorpay Order', record.razorpayOrderId || '—'],
+                ['QR ID',          record.razorpayQrId || '—'],
+                ['Payment ID',     record.razorpayPaymentId || '—'],
+                ['Amount',         `₹${fmt(record.amount)}`],
+                ['Status',         record.paymentStatus],
+                ['Created',        fmtDate(record.createdAt)],
+                record.paymentAt   && ['Paid At',    fmtDate(record.paymentAt)],
+                record.qrExpiresAt && ['QR Expires', fmtDate(new Date(record.qrExpiresAt * 1000))],
+              ].filter(Boolean).map(([k, v]) => (
+                <div key={k}>
+                  <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{k}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-0)', fontWeight: 500, wordBreak: 'break-all' }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {record.qrCodeImageUrl && record.paymentStatus !== 'PAID' && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                <button className="btn btn-secondary btn-sm" onClick={() => setQrVisible(v => !v)}
+                  style={{ marginBottom: qrVisible ? 12 : 0 }}>
+                  {qrVisible ? <><EyeOff size={12} /> Hide QR</> : <><Eye size={12} /> View QR Code</>}
+                </button>
+                {qrVisible && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                    <div style={{ padding: 8, background: '#fff', borderRadius: 10, flexShrink: 0 }}>
+                      <img src={record.qrCodeImageUrl} alt="QR" style={{ width: 120, height: 120, display: 'block' }} />
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, paddingTop: 4 }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>UPI QR Code</div>
+                      <div>Customer scans to pay ₹{fmt(record.amount)} via any UPI app.</div>
+                      {record.qrExpiresAt && (
+                        <div style={{ marginTop: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                          Valid till: {new Date(record.qrExpiresAt * 1000).toLocaleString('en-IN')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 
@@ -205,6 +308,11 @@ export default function PaymentsPage() {
   const [filter,      setFilter]      = useState('ALL');
   const [search,      setSearch]      = useState('');
   const [refundModal, setRefundModal] = useState(null);
+  const [activeTab,   setActiveTab]   = useState('online'); // 'online' | 'cod'
+  const [codPayments, setCodPayments] = useState([]);
+  const [codLoading,  setCodLoading]  = useState(false);
+  const [codFilter,   setCodFilter]   = useState('ALL');
+  const [codSearch,   setCodSearch]   = useState('');
 
   // Quick lookup by ID
   const [lookupId,  setLookupId]  = useState('');
@@ -227,6 +335,49 @@ export default function PaymentsPage() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadCod = useCallback(async () => {
+    setCodLoading(true);
+    try {
+      const [placedRes, deliveredRes] = await Promise.allSettled([
+        ordersAPI.getByStatus('PLACED'),
+        ordersAPI.getByStatus('DELIVERED'),
+      ]);
+      const allOrders = [
+        ...(placedRes.status === 'fulfilled' ? (placedRes.value.data?.data || []) : []),
+        ...(deliveredRes.status === 'fulfilled' ? (deliveredRes.value.data?.data || []) : []),
+      ].filter(o => o.billing?.paymentMode === 'COD');
+      const results = await Promise.allSettled(
+        allOrders.slice(0, 40).map(o => ordersAPI.getPayment(o.orderId || o.id))
+      );
+      setCodPayments(results
+        .map(r => r.status === 'fulfilled' ? (r.value.data?.data || r.value.data) : null)
+        .filter(Boolean)
+      );
+    } catch { toast.error('Could not load COD payments'); }
+    finally { setCodLoading(false); }
+  }, []);
+
+  useEffect(() => { if (activeTab === 'cod') loadCod(); }, [activeTab, loadCod]);
+
+  // Real-time: new COD payment received
+  useEffect(() => {
+    const handler = (e) => {
+      const { orderId, amount, paidAt } = e.detail || {};
+      if (!orderId) return;
+      setCodPayments(prev => {
+        const exists = prev.find(r => r.orderId === orderId);
+        if (exists)
+          return prev.map(r => r.orderId === orderId
+            ? { ...r, paymentStatus: 'PAID', paymentAt: paidAt, amount: amount || r.amount }
+            : r);
+        return [{ orderId, amount, paymentStatus: 'PAID', paymentAt: paidAt, createdAt: paidAt }, ...prev];
+      });
+      toast.success(`💰 COD paid — Order #${orderId.slice(-8).toUpperCase()} · ₹${amount}`, { duration: 5000 });
+    };
+    window.addEventListener('ws:cod:payment_received', handler);
+    return () => window.removeEventListener('ws:cod:payment_received', handler);
+  }, []);
 
   const handleLookup = async (e) => {
     e.preventDefault();
@@ -261,14 +412,32 @@ export default function PaymentsPage() {
       <div className="page-header">
         <div className="page-header-left">
           <h1>Payments</h1>
-          <p>Monitor transactions, process refunds, and look up payment details</p>
+          <p>Monitor online transactions, COD payments, and process refunds</p>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={load} disabled={loading}>
-          <RefreshCw size={13} style={{ animation: loading ? 'spin 0.7s linear infinite' : 'none' }} />
+        <button className="btn btn-secondary btn-sm"
+          onClick={activeTab === 'cod' ? loadCod : load}
+          disabled={activeTab === 'cod' ? codLoading : loading}>
+          <RefreshCw size={13} style={{ animation: (activeTab === 'cod' ? codLoading : loading) ? 'spin 0.7s linear infinite' : 'none' }} />
           Refresh
         </button>
       </div>
 
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', marginBottom: 24, border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', width: 'fit-content' }}>
+        {[
+          { key: 'online', label: '💳 Online Payments' },
+          { key: 'cod',    label: '💵 COD Payments'    },
+        ].map(({ key, label }) => (
+          <button key={key} onClick={() => setActiveTab(key)} style={{
+            padding: '9px 20px', fontSize: 13, fontWeight: activeTab === key ? 700 : 500,
+            background: activeTab === key ? 'var(--accent)' : 'var(--bg-2)',
+            color:      activeTab === key ? 'var(--bg-0)'   : 'var(--text-1)',
+            border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {activeTab === 'online' && (<>
       {/* ── Stats ── */}
       {stats && (
         <div className="stat-grid" style={{ marginBottom: 24 }}>
@@ -402,6 +571,88 @@ export default function PaymentsPage() {
       {refundModal && (
         <RefundModal payment={refundModal} onClose={() => setRefundModal(null)} onSuccess={afterRefund} />
       )}
+      </>)} {/* end online tab */}
+
+      {/* ── COD Payments Tab ─────────────────────────────────────────────── */}
+      {activeTab === 'cod' && (
+        <div>
+          <div className="stat-grid" style={{ marginBottom: 24 }}>
+            <StatCard icon={Banknote}     color="orange" label="Total COD Orders"   value={codPayments.length}                                                       sub="loaded orders" />
+            <StatCard icon={CheckCircle2} color="green"  label="Digitally Paid"     value={codPayments.filter(r => r.paymentStatus === 'PAID').length}               sub="via QR / Pay Now" />
+            <StatCard icon={Clock}        color="orange" label="Pending"             value={codPayments.filter(r => r.paymentStatus === 'PENDING').length}            sub="awaiting payment" />
+            <StatCard icon={TrendingUp}   color="accent" label="Amount Collected"
+              value={`₹${fmtInt(codPayments.filter(r => r.paymentStatus === 'PAID').reduce((s, r) => s + (r.amount || 0), 0))}`}
+              sub="digital COD total" />
+          </div>
+
+          <div className="filters-row" style={{ marginBottom: 16 }}>
+            <div className="search-input-wrap">
+              <Search size={14} />
+              <input className="search-input" placeholder="Search by Order ID or Reference…"
+                value={codSearch} onChange={e => setCodSearch(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {['ALL', 'PENDING', 'PAID', 'EXPIRED'].map(f => (
+                <button key={f} onClick={() => setCodFilter(f)} style={{
+                  background: codFilter === f ? 'var(--accent)' : 'var(--bg-3)',
+                  color:      codFilter === f ? 'var(--bg-0)'   : 'var(--text-1)',
+                  border:     codFilter === f ? 'none'          : '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)', padding: '7px 14px',
+                  fontSize: 12, fontWeight: codFilter === f ? 700 : 500,
+                  cursor: 'pointer', fontFamily: 'var(--font-mono)',
+                  letterSpacing: '0.04em', transition: 'all 0.15s',
+                }}>{f}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {codLoading ? (
+              <div className="loading-center" style={{ padding: 60 }}><div className="loader" /></div>
+            ) : (() => {
+              const filtered = codPayments.filter(r => {
+                if (codFilter !== 'ALL' && r.paymentStatus !== codFilter) return false;
+                if (!codSearch) return true;
+                const q = codSearch.toLowerCase();
+                return (r.orderId || '').toLowerCase().includes(q)
+                    || (r.razorpayPaymentId || '').toLowerCase().includes(q)
+                    || (r.razorpayQrId || '').toLowerCase().includes(q);
+              });
+              return filtered.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon"><Banknote size={22} /></div>
+                  <h3>No COD payments found</h3>
+                  <p>{codFilter !== 'ALL' ? `No ${codFilter.toLowerCase()} COD payments` : 'No COD payment records yet'}</p>
+                </div>
+              ) : (
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Reference</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map(r => <CodPaymentRow key={r.orderId} record={r} />)}
+                    </tbody>
+                  </table>
+                  <div style={{ padding: '10px 16px', fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-mono)', borderTop: '1px solid var(--border)' }}>
+                    {filtered.length} record{filtered.length !== 1 ? 's' : ''}
+                    {' · '}{codPayments.filter(r => r.paymentStatus === 'PAID').length} paid
+                    {' · '}₹{fmtInt(codPayments.filter(r => r.paymentStatus === 'PAID').reduce((s, r) => s + (r.amount || 0), 0))} collected
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

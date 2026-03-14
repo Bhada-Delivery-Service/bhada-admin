@@ -86,6 +86,11 @@ export const ordersAPI = {
   deliver:           (id, otp)    => api.post(`/orders/${id}/deliver`,  { dropOtp:   otp }),
   cancelDelivery:    (id, reason) => api.put(`/orders/${id}/cancel-delivery`, { reason }),
   checkAvailability: (params)     => api.get('/orders/check-availability', { params }),
+
+  // Get COD payment data for an order (QR code, payment status)
+  getPayment:     (id)             => api.get(`/orders/${id}/payment`),
+  // Status filter e.g. PLACED, DELIVERED
+  getByStatus:    (status)         => api.get(`/orders/status/${status}`),
 };
 
 // ─── Riders ────────────────────────────────────────────────────────────────
@@ -135,6 +140,15 @@ export const paymentsAPI = {
   getStatistics: () => api.get('/payments/statistics'),
   getStatus:     (paymentId)         => api.get(`/payments/${paymentId}/status`),
   refund:        (paymentId, amount) => api.post(`/payments/${paymentId}/refund`, { refundAmount: amount }),
+};
+
+// ─── COD Payments (Admin monitoring) ──────────────────────────────────────
+// Records stored in Firestore cod_payments/{orderId} by backend
+export const codPaymentsAPI = {
+  // Get COD payment record for a single order
+  getByOrder:     (orderId)        => api.get(`/payments/cod/${orderId}`),
+  // (Re-)generate QR + Razorpay order for an order (admin can trigger)
+  initiate:       (orderId)        => api.post('/payments/cod/initiate', { orderId }),
 };
 
 // ─── Disputes ──────────────────────────────────────────────────────────────
