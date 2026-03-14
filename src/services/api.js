@@ -248,4 +248,12 @@ export const refundsAPI = {
   skip:          (id, notes) => api.put(`/refunds/${id}/skip`, { notes }),
 };
 
+// ─── Feedback & Suggestions ───────────────────────────────────────────────
+export const feedbackAPI = {
+  getAll:   (status)          => api.get(`/feedback${status && status !== 'ALL' ? `?status=${status}` : ''}`),
+  getStats: ()                => api.get('/feedback/stats'),
+  getById:  (id)              => api.get(`/feedback/${id}`),
+  update:   (id, data)        => api.put(`/feedback/${id}`, data),
+};
+
 export default api;

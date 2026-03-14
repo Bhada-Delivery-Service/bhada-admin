@@ -5,7 +5,7 @@ import {
   Navigation,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
   IndianRupee, ArrowDownToLine, MapPin, UserCircle, Users,
-  RotateCcw, Settings2,
+  RotateCcw, Settings2, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -46,6 +46,7 @@ const navSections = [
   {
     label: 'Administration',
     items: [
+      { to: '/feedback',          icon: MessageSquare, label: 'Feedback'           },
       { to: '/cancellation-policy', icon: Settings2,  label: 'Cancellation Policy' },
       { to: '/admins',  icon: ShieldCheck,  label: 'Admins' },
       { to: '/profile', icon: UserCircle,   label: 'My Profile' },
@@ -95,6 +96,7 @@ export default function Layout() {
       '/handling-charges':  'Handling Charges',
       '/refunds':           'Refunds',
       '/cancellation-policy': 'Cancellation Policy',
+      '/feedback':          'Feedback & Suggestions',
     };
     return map[path] || 'Dashboard';
   };
