@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
+const BASE_URL = import.meta.env.VITE_API_URL 
+ 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -269,5 +269,33 @@ export const feedbackAPI = {
   getById:  (id)              => api.get(`/feedback/${id}`),
   update:   (id, data)        => api.put(`/feedback/${id}`, data),
 };
+
+// ─── Finance ──────────────────────────────────────────────────────────────
+export const financeAPI = {
+  // Dashboard
+  getBalance:      ()                  => api.get('/finance/balance'),
+  getReport:       (from, to)          => api.get(`/finance/report${buildQuery({ from, to })}`),
+
+  // Transactions — all filters optional
+  getTransactions: (params = {})       => api.get(`/finance/transactions${buildQuery(params)}`),
+
+  // Entries by linked reference (orderId / refundId / withdrawalId)
+  getByReference:  (referenceId)       => api.get(`/finance/reference/${referenceId}`),
+
+  // Manual actions
+  manualDeposit:   (data)              => api.post('/finance/manual-deposit',  data),
+  gstPayment:      (data)              => api.post('/finance/gst-payment',     data),
+  ledgerEntry:     (data)              => api.post('/finance/ledger-entry',     data),
+};
+
+// ─── Helper (add once at top of api.js if not already there) ─────────────────
+function buildQuery(params = {}) {
+  const q = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  return q ? `?${q}` : '';
+}
+
 
 export default api;
