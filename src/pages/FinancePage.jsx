@@ -3,7 +3,7 @@ import {
   IndianRupee, TrendingUp, TrendingDown, Wallet, RefreshCw,
   Plus, Filter, X, ChevronDown, BookOpen, ArrowUpCircle,
   ArrowDownCircle, Receipt, Bike, RotateCcw, Landmark,
-  CreditCard, Wrench, Download, Search, AlertCircle,
+  CreditCard, Wrench, Download, Search, AlertCircle, Tag,
   CheckCircle2, Calendar,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -20,7 +20,7 @@ const fmtDate  = (d) =>
 
 const TX_TYPES = [
   'ORDER_INCOME', 'MANUAL_DEPOSIT', 'RIDER_PAYOUT',
-  'REFUND', 'GST_PAYMENT', 'RAZORPAY_COMMISSION', 'SYSTEM_ADJUSTMENT',
+  'REFUND', 'GST_PAYMENT', 'RAZORPAY_COMMISSION', 'SYSTEM_ADJUSTMENT', 'OFFER_DISCOUNT',
 ];
 
 const TYPE_CONFIG = {
@@ -31,6 +31,7 @@ const TYPE_CONFIG = {
   GST_PAYMENT:         { label: 'GST Payment',          icon: Landmark,       colorKey: 'purple' },
   RAZORPAY_COMMISSION: { label: 'Razorpay Commission',  icon: CreditCard,     colorKey: 'orange' },
   SYSTEM_ADJUSTMENT:   { label: 'System Adjustment',   icon: Wrench,         colorKey: 'blue'   },
+  OFFER_DISCOUNT:      { label: 'Offer Discount',       icon: Tag,            colorKey: 'pink'   },
 };
 
 const DIR_COLOR = { CREDIT: 'green', DEBIT: 'red' };
@@ -459,6 +460,7 @@ export default function FinancePage() {
         <StatCard label="Refunds Issued"      value={byType.REFUND}                colorKey="red"    icon={RotateCcw}    />
         <StatCard label="GST Paid"            value={byType.GST_PAYMENT}           colorKey="purple" icon={Landmark}     />
         <StatCard label="Razorpay Commission" value={byType.RAZORPAY_COMMISSION}   colorKey="orange" icon={CreditCard}   />
+        <StatCard label="Offer Discounts"     value={byType.OFFER_DISCOUNT}         colorKey="pink"   icon={Tag}          />
       </div>
 
       {/* ── Filters ─────────────────────────────────────────────────────────── */}
