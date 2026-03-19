@@ -11,10 +11,19 @@ function formatTime(ts) {
 }
 
 function isImage(url) {
-  return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+  if (!url) return false;
+  const decoded = decodeURIComponent(url);
+  return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(decoded);
 }
 function isVideo(url) {
-  return /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(url);
+  if (!url) return false;
+  const decoded = decodeURIComponent(url);
+  return /\.(mp4|mov|webm|ogg)(\?.*)?$/i.test(decoded);
+}
+// Encode spaces in URLs so browsers can load them (fixes legacy filenames with spaces)
+function safeUrl(url) {
+  if (!url) return url;
+  return url.replace(/ /g, '%20');
 }
 
 // ─── Order Info Panel ────────────────────────────────────────────────────────
@@ -77,9 +86,9 @@ function OrderInfoPanel({ dispute }) {
             {dispute.evidenceUrls.map((url, i) => (
               isImage(url)
                 ? <a key={i} href={url} target="_blank" rel="noreferrer">
-                    <img src={url} alt="evidence" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
+                    <img src={safeUrl(url)} alt="evidence" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
                   </a>
-                : <a key={i} href={url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--blue)' }}>File {i + 1}</a>
+                : <a key={i} href={safeUrl(url)} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: 'var(--blue)' }}>File {i + 1}</a>
             ))}
           </div>
         </div>
@@ -115,15 +124,15 @@ function MessageBubble({ msg, isOwn }) {
           {msg.mediaUrls?.map((url, i) => (
             <div key={i} style={{ marginTop: msg.text ? 6 : 0 }}>
               {isImage(url) ? (
-                <a href={url} target="_blank" rel="noreferrer">
-                  <img src={url} alt="media" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 6, display: 'block' }} />
+                <a href={safeUrl(url)} target="_blank" rel="noreferrer">
+                  <img src={safeUrl(url)} alt="media" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 6, display: 'block' }} />
                 </a>
               ) : isVideo(url) ? (
                 <video controls style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 6, display: 'block' }}>
-                  <source src={url} />
+                  <source src={safeUrl(url)} />
                 </video>
               ) : (
-                <a href={url} target="_blank" rel="noreferrer" style={{ color: isOwn ? 'rgba(255,255,255,0.85)' : 'var(--blue)', fontSize: 12 }}>
+                <a href={safeUrl(url)} target="_blank" rel="noreferrer" style={{ color: isOwn ? 'rgba(255,255,255,0.85)' : 'var(--blue)', fontSize: 12 }}>
                   📎 Attachment
                 </a>
               )}
@@ -199,7 +208,13 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
     setSending(true);
     try {
       const { data } = await disputesAPI.sendMessage(disputeId, { text: text.trim(), mediaUrls });
-      setMessages(prev => [...prev, data.data]);
+      const sent = data?.data;
+      // Optimistic add — socket dedup will skip it when broadcast arrives
+      if (sent?.messageId) {
+        setMessages(prev =>
+          prev.find(m => m.messageId === sent.messageId) ? prev : [...prev, sent]
+        );
+      }
       setText('');
       setMediaUrls([]);
     } catch (err) {
@@ -216,7 +231,7 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
     try {
       const urls = await Promise.all(files.map(async (file) => {
         const { data } = await filesAPI.upload(file);
-        return data.url;
+        return data.data.url;
       }));
       setMediaUrls(prev => [...prev, ...urls]);
       toast.success(`${urls.length} file(s) attached`);
@@ -283,7 +298,7 @@ export default function DisputeChatModal({ dispute, onClose, currentAdminUid, so
                 {mediaUrls.map((url, i) => (
                   <div key={i} style={{ position: 'relative' }}>
                     {isImage(url)
-                      ? <img src={url} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
+                      ? <img src={safeUrl(url)} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }} />
                       : <div style={{ width: 48, height: 48, background: 'var(--bg-3)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'var(--text-2)' }}>FILE</div>
                     }
                     <button
