@@ -108,6 +108,8 @@ export const ridersAPI = {
   getRatings:         (id)              => api.get(`/riders/${id}/ratings`),
   getRatingStats:     (id)              => api.get(`/riders/${id}/ratings`),  // summary included in same response
   getRoutes:          (id)              => api.get(`/riders/${id}/routes`),
+  blockRider:         (id)              => api.put(`/riders/${id}/block`),    // ✅ NEW
+  unblockRider:       (id)              => api.put(`/riders/${id}/unblock`),  // ✅ NEW
 };
 
 // ─── Offers ────────────────────────────────────────────────────────────────
