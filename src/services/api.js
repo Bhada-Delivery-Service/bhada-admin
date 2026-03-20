@@ -290,6 +290,25 @@ export const financeAPI = {
   ledgerEntry:     (data)              => api.post('/finance/ledger-entry',     data),
 };
 
+// ─── Item Catalog ─────────────────────────────────────────────────────────────
+export const itemCatalogAPI = {
+  // Sizes
+  getSizes:       (activeOnly = false) => api.get(`/item-catalog/sizes${activeOnly ? '?activeOnly=true' : ''}`),
+  createSize:     (data)               => api.post('/item-catalog/sizes', data),
+  updateSize:     (id, data)           => api.put(`/item-catalog/sizes/${id}`, data),
+  deleteSize:     (id)                 => api.delete(`/item-catalog/sizes/${id}`),
+  // Types
+  getTypes:       (activeOnly = false) => api.get(`/item-catalog/types${activeOnly ? '?activeOnly=true' : ''}`),
+  createType:     (data)               => api.post('/item-catalog/types', data),
+  updateType:     (id, data)           => api.put(`/item-catalog/types/${id}`, data),
+  deleteType:     (id)                 => api.delete(`/item-catalog/types/${id}`),
+  // Categories
+  getCategories:  (activeOnly = false) => api.get(`/item-catalog/categories${activeOnly ? '?activeOnly=true' : ''}`),
+  createCategory: (data)               => api.post('/item-catalog/categories', data),
+  updateCategory: (id, data)           => api.put(`/item-catalog/categories/${id}`, data),
+  deleteCategory: (id)                 => api.delete(`/item-catalog/categories/${id}`),
+};
+
 // ─── Helper (add once at top of api.js if not already there) ─────────────────
 function buildQuery(params = {}) {
   const q = Object.entries(params)

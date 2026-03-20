@@ -12,6 +12,8 @@ import { StatusBadge } from './DashboardPage';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ALL_STATUSES = ['ALL', 'DRAFT', 'PLACED', 'READY', 'DISPATCHED', 'DELIVERED', 'CANCELLED'];
+// Note: ITEM_TYPES, ITEM_CATS, ITEM_SIZES are now admin-configured via Item Catalog.
+// In this page they are only used for display labels — keeping a fallback list for legacy orders.
 const ITEM_TYPES   = ['FRAGILE','NON_FRAGILE','PERISHABLE','NON_PERISHABLE','ELECTRONICS','CLOTHING','MEDICAL','DOCUMENT','FOOD','OTHER'];
 const ITEM_CATS    = ['DOCUMENT','FOOD','GROCERY','ELECTRONICS','CLOTHING','MEDICAL','PERISHABLE','OTHER'];
 const ITEM_SIZES   = ['MINI','SMALL','MEDIUM','LARGE','EXTRA_LARGE'];
