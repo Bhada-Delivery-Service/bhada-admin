@@ -126,6 +126,7 @@ export const pricingAPI = {
   getAll:     ()          => api.get('/pricing'),
   create:     (data)      => api.post('/pricing', data),
   cleanup:    ()          => api.post('/pricing/cleanup'),
+  syncSizes:  ()          => api.post('/pricing/sync-sizes'),   // sync size multipliers with item catalog
   activate:   (id)        => api.patch(`/pricing/${id}/activate`),
   deactivate: (id)        => api.patch(`/pricing/${id}/deactivate`),
   estimate:   (data)      => api.post('/pricing/estimate', data),

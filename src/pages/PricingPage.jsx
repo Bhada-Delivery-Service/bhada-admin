@@ -5,7 +5,7 @@ import {
   Save, Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { pricingAPI } from '../services/api';
+import { pricingAPI, itemCatalogAPI } from '../services/api';
 
 /* ─── Google Maps loader ─────────────────────────────────────────────────── */
 let mapsLoaded = false, mapsLoading = false;
@@ -79,7 +79,8 @@ function multiplierOpacity(v) {
 
 const DEFAULT_CONFIG = {
   distanceSlabs: { slab1MaxKm: 10, rateA: 12, slab2MaxKm: 30, rateB: 9, slab3MaxKm: 100, rateC: 7 },
-  sizeMultipliers: { mini: 0.8, small: 1.0, medium: 1.3, large: 1.6 },
+  sizeMultipliers: { mini: 0.8, small: 1.0, medium: 1.3, large: 1.6, extra_large: 2.0 },
+  defaultSizeMultiplier: 1.0,
   defaultAreaMultiplier: 1.0,
   surgeMultiplier: 1.0,
   surgeEnabled: false,
@@ -355,10 +356,15 @@ function GridMapModal({ grids, onClose, onSave, onDelete }) {
 }
 
 /* ─── Pricing Config Form ────────────────────────────────────────────────── */
-function ConfigForm({ initial, onSubmit, submitting, onCancel }) {
+function ConfigForm({ initial, onSubmit, submitting, onCancel, catalogSizes = [] }) {
   const [cfg, setCfg]         = useState(initial?.config ?? DEFAULT_CONFIG);
   const [version, setVersion] = useState(initial?.version ?? '');
   const [section, setSection] = useState('slabs');
+
+  // Derive size keys: use catalog if available, fallback to keys in current config
+  const sizeKeys = catalogSizes.length > 0
+    ? catalogSizes.map(s => s.key)
+    : Object.keys(cfg.sizeMultipliers || { mini: 0.8, small: 1.0, medium: 1.3, large: 1.6 });
 
   const update = (path, value) => {
     setCfg(prev => {
@@ -421,17 +427,29 @@ function ConfigForm({ initial, onSubmit, submitting, onCancel }) {
 
       {section === 'size' && (
         <div>
-          <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 12 }}>Applied after distance cost. e.g. 1.3 = 30% premium for medium parcels.</div>
-          <div className="two-col" style={{ gap: 10 }}>
-            {['mini', 'small', 'medium', 'large'].map(size => (
-              <div className="form-group" key={size} style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ textTransform: 'capitalize' }}>{size} ×</label>
-                <input className="form-input" type="number" step="0.05"
-                  value={cfg.sizeMultipliers[size]}
-                  onChange={e => update(`sizeMultipliers.${size}`, e.target.value)} />
-              </div>
-            ))}
+          <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 12 }}>Applied after distance cost. e.g. 1.3 = 30% premium for that size. Sizes come from your Item Catalog.</div>
+          <div className="form-group">
+            <label className="form-label">Default Multiplier (for new/unknown sizes)</label>
+            <input className="form-input" type="number" step="0.05"
+              value={cfg.defaultSizeMultiplier ?? 1.0}
+              onChange={e => update('defaultSizeMultiplier', e.target.value)} />
           </div>
+          {sizeKeys.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text-2)', padding: '12px 0' }}>
+              No item sizes configured yet. Add sizes in the Item Catalog first.
+            </div>
+          ) : (
+            <div className="two-col" style={{ gap: 10 }}>
+              {sizeKeys.map(size => (
+                <div className="form-group" key={size} style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ textTransform: 'capitalize' }}>{size} ×</label>
+                  <input className="form-input" type="number" step="0.05"
+                    value={cfg.sizeMultipliers?.[size] ?? cfg.defaultSizeMultiplier ?? 1.0}
+                    onChange={e => update(`sizeMultipliers.${size}`, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -539,21 +557,33 @@ export default function PricingPage() {
   const [activating, setActivating]   = useState(null); // id being activated/deactivated
   const [cleaning, setCleaning]         = useState(false);
 
-  const [estimateForm, setEstimateForm] = useState({ pickupLat: '', pickupLng: '', dropLat: '', dropLng: '', itemSize: 'small' });
+  const [catalogSizes, setCatalogSizes] = useState([]);
+  const [syncing, setSyncing]           = useState(false);
+
+  const [estimateForm, setEstimateForm] = useState({ pickupLat: '', pickupLng: '', dropLat: '', dropLng: '', itemSize: '' });
   const [breakdown, setBreakdown]       = useState(null);
   const [estimating, setEstimating]     = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [a, all, g] = await Promise.allSettled([
+      const [a, all, g, sizes] = await Promise.allSettled([
         pricingAPI.getActive(),
         pricingAPI.getAll(),
         pricingAPI.getGrids(),
+        itemCatalogAPI.getSizes(true),  // active only
       ]);
-      if (a.status === 'fulfilled')   setActive(a.value.data?.data || a.value.data);
-      if (all.status === 'fulfilled') setConfigs(all.value.data?.data || []);
-      if (g.status === 'fulfilled')   setGrids(g.value.data?.data || []);
+      if (a.status === 'fulfilled')     setActive(a.value.data?.data || a.value.data);
+      if (all.status === 'fulfilled')   setConfigs(all.value.data?.data || []);
+      if (g.status === 'fulfilled')     setGrids(g.value.data?.data || []);
+      if (sizes.status === 'fulfilled') {
+        const loadedSizes = sizes.value.data?.data || [];
+        setCatalogSizes(loadedSizes);
+        // Set default estimator size to first catalog size
+        if (loadedSizes.length > 0) {
+          setEstimateForm(f => ({ ...f, itemSize: f.itemSize || loadedSizes[0].key }));
+        }
+      }
     } catch { toast.error('Failed to load pricing data'); }
     finally { setLoading(false); }
   };
@@ -601,6 +631,16 @@ export default function PricingPage() {
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
     finally { setSubmitting(false); }
+  };
+
+  const handleSyncSizes = async () => {
+    setSyncing(true);
+    try {
+      await pricingAPI.syncSizes();
+      toast.success('Size multipliers synced with item catalog!');
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.message || 'Sync failed'); }
+    finally { setSyncing(false); }
   };
 
   const handleGridSave = async (dto) => {
@@ -706,12 +746,17 @@ export default function PricingPage() {
                   </div>
 
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', marginBottom: 8 }}>Size Multipliers</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {['mini', 'small', 'medium', 'large'].map(s => (
-                        <div key={s} style={{ flex: 1, background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-2)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Size Multipliers
+                      <button onClick={handleSyncSizes} disabled={syncing} style={{ marginLeft: 10, padding: '2px 8px', fontSize: 10, background: 'var(--accent-dim)', border: '1px solid var(--accent)', borderRadius: 6, cursor: 'pointer', color: 'var(--accent)', fontWeight: 700 }}>
+                        {syncing ? '…' : '⟳ Sync from Catalog'}
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {Object.entries(active.config.sizeMultipliers || {}).map(([s, v]) => (
+                        <div key={s} style={{ minWidth: 70, background: 'var(--bg-2)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
                           <div style={{ fontSize: 10, color: 'var(--text-2)', textTransform: 'uppercase', marginBottom: 2 }}>{s}</div>
-                          <div style={{ fontWeight: 700, fontSize: 16 }}>{active.config.sizeMultipliers?.[s]}×</div>
+                          <div style={{ fontWeight: 700, fontSize: 16 }}>{v}×</div>
                         </div>
                       ))}
                     </div>
@@ -917,7 +962,10 @@ export default function PricingPage() {
             <div className="form-group">
               <label className="form-label">Item Size</label>
               <select className="form-input" value={estimateForm.itemSize} onChange={e => setEstimateForm(f => ({ ...f, itemSize: e.target.value }))}>
-                {['mini', 'small', 'medium', 'large'].map(s => <option key={s} value={s}>{s}</option>)}
+                {catalogSizes.length > 0
+                  ? catalogSizes.map(s => <option key={s.key} value={s.key}>{s.name} ({s.key})</option>)
+                  : ['mini', 'small', 'medium', 'large'].map(s => <option key={s} value={s}>{s}</option>)
+                }
               </select>
             </div>
             <button type="submit" className="btn btn-primary" disabled={estimating}>
@@ -936,7 +984,7 @@ export default function PricingPage() {
               <div className="modal-title">New Pricing Config</div>
               <button className="modal-close" onClick={() => setShowCreate(false)}><X size={15} /></button>
             </div>
-            <ConfigForm onSubmit={handleCreate} submitting={submitting} onCancel={() => setShowCreate(false)} />
+            <ConfigForm onSubmit={handleCreate} submitting={submitting} onCancel={() => setShowCreate(false)} catalogSizes={catalogSizes} />
           </div>
         </div>
       )}
