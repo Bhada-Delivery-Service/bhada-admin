@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-
+const BASE_URL = import.meta.env.VITE_API_URL 
+ 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -108,6 +108,8 @@ export const ridersAPI = {
   getRatings:         (id)              => api.get(`/riders/${id}/ratings`),
   getRatingStats:     (id)              => api.get(`/riders/${id}/ratings`),  // summary included in same response
   getRoutes:          (id)              => api.get(`/riders/${id}/routes`),
+  blockRider:         (id)              => api.put(`/riders/${id}/block`),    // ✅ NEW
+  unblockRider:       (id)              => api.put(`/riders/${id}/unblock`),  // ✅ NEW
 };
 
 // ─── Offers ────────────────────────────────────────────────────────────────
@@ -124,6 +126,7 @@ export const pricingAPI = {
   getAll:     ()          => api.get('/pricing'),
   create:     (data)      => api.post('/pricing', data),
   cleanup:    ()          => api.post('/pricing/cleanup'),
+  syncSizes:  ()          => api.post('/pricing/sync-sizes'),   // sync size multipliers with item catalog
   activate:   (id)        => api.patch(`/pricing/${id}/activate`),
   deactivate: (id)        => api.patch(`/pricing/${id}/deactivate`),
   estimate:   (data)      => api.post('/pricing/estimate', data),
@@ -269,5 +272,52 @@ export const feedbackAPI = {
   getById:  (id)              => api.get(`/feedback/${id}`),
   update:   (id, data)        => api.put(`/feedback/${id}`, data),
 };
+
+// ─── Finance ──────────────────────────────────────────────────────────────
+export const financeAPI = {
+  // Dashboard
+  getBalance:      ()                  => api.get('/finance/balance'),
+  getReport:       (from, to)          => api.get(`/finance/report${buildQuery({ from, to })}`),
+
+  // Transactions — all filters optional
+  getTransactions: (params = {})       => api.get(`/finance/transactions${buildQuery(params)}`),
+
+  // Entries by linked reference (orderId / refundId / withdrawalId)
+  getByReference:  (referenceId)       => api.get(`/finance/reference/${referenceId}`),
+
+  // Manual actions
+  manualDeposit:   (data)              => api.post('/finance/manual-deposit',  data),
+  gstPayment:      (data)              => api.post('/finance/gst-payment',     data),
+  ledgerEntry:     (data)              => api.post('/finance/ledger-entry',     data),
+};
+
+// ─── Item Catalog ─────────────────────────────────────────────────────────────
+export const itemCatalogAPI = {
+  // Sizes
+  getSizes:       (activeOnly = false) => api.get(`/item-catalog/sizes${activeOnly ? '?activeOnly=true' : ''}`),
+  createSize:     (data)               => api.post('/item-catalog/sizes', data),
+  updateSize:     (id, data)           => api.put(`/item-catalog/sizes/${id}`, data),
+  deleteSize:     (id)                 => api.delete(`/item-catalog/sizes/${id}`),
+  // Types
+  getTypes:       (activeOnly = false) => api.get(`/item-catalog/types${activeOnly ? '?activeOnly=true' : ''}`),
+  createType:     (data)               => api.post('/item-catalog/types', data),
+  updateType:     (id, data)           => api.put(`/item-catalog/types/${id}`, data),
+  deleteType:     (id)                 => api.delete(`/item-catalog/types/${id}`),
+  // Categories
+  getCategories:  (activeOnly = false) => api.get(`/item-catalog/categories${activeOnly ? '?activeOnly=true' : ''}`),
+  createCategory: (data)               => api.post('/item-catalog/categories', data),
+  updateCategory: (id, data)           => api.put(`/item-catalog/categories/${id}`, data),
+  deleteCategory: (id)                 => api.delete(`/item-catalog/categories/${id}`),
+};
+
+// ─── Helper (add once at top of api.js if not already there) ─────────────────
+function buildQuery(params = {}) {
+  const q = Object.entries(params)
+    .filter(([, v]) => v !== undefined && v !== null && v !== '')
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  return q ? `?${q}` : '';
+}
+
 
 export default api;

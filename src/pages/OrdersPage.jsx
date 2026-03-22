@@ -12,6 +12,8 @@ import { StatusBadge } from './DashboardPage';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ALL_STATUSES = ['ALL', 'DRAFT', 'PLACED', 'READY', 'DISPATCHED', 'DELIVERED', 'CANCELLED'];
+// Note: ITEM_TYPES, ITEM_CATS, ITEM_SIZES are now admin-configured via Item Catalog.
+// In this page they are only used for display labels — keeping a fallback list for legacy orders.
 const ITEM_TYPES   = ['FRAGILE','NON_FRAGILE','PERISHABLE','NON_PERISHABLE','ELECTRONICS','CLOTHING','MEDICAL','DOCUMENT','FOOD','OTHER'];
 const ITEM_CATS    = ['DOCUMENT','FOOD','GROCERY','ELECTRONICS','CLOTHING','MEDICAL','PERISHABLE','OTHER'];
 const ITEM_SIZES   = ['MINI','SMALL','MEDIUM','LARGE','EXTRA_LARGE'];
@@ -548,6 +550,8 @@ export default function OrdersPage() {
   const [searchType,  setSearchType]  = useState('all');
   const [searchValue, setSearchValue] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate,   setToDate]   = useState('');
 
   // Modals
   const [selected,    setSelected]    = useState(null);
@@ -570,11 +574,37 @@ export default function OrdersPage() {
     window.history.replaceState({}, document.title);
   }, []);
 
+  // Normalize phone: strip spaces/dashes, ensure +91 prefix
+  const normalizePhone = (phone) => {
+    let p = phone.trim().replace(/[\s\-]/g, '');
+    // Already has a + country code — return as is
+    if (p.startsWith('+')) return p;
+    // 10 digit Indian number — add +91
+    if (/^[6-9]\d{9}$/.test(p)) return '+91' + p;
+    // 11 digits starting with 91 — add +
+    if (/^91\d{10}$/.test(p)) return '+' + p;
+    // Fallback — add +91 and hope for the best
+    return '+91' + p;
+  };
+
+  const PHONE_SEARCH_TYPES = ['senderPhone', 'receiverPhone', 'riderPhone'];
+
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (searchType !== 'all' && searchValue.trim()) params[searchType] = searchValue.trim();
+      if (searchType !== 'all' && searchValue.trim()) {
+        // Normalize phone numbers before sending to backend
+        const val = PHONE_SEARCH_TYPES.includes(searchType)
+          ? normalizePhone(searchValue)
+          : searchValue.trim();
+        params[searchType] = val;
+      }
+      if (searchType === 'dateRange') {
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate)   params.toDate   = toDate;
+        delete params.dateRange; // don't send the key itself
+      }
       if (statusFilter !== 'ALL') params.status = statusFilter;
       params.pageSize = 100;
       const res = await ordersAPI.adminSearch(params);
@@ -623,11 +653,15 @@ export default function OrdersPage() {
   };
 
   const searchTypeOpts = [
-    { val: 'all',        label: 'All Orders' },
-    { val: 'orderId',    label: 'Order ID' },
-    { val: 'senderId',   label: 'Sender ID' },
-    { val: 'receiverId', label: 'Receiver ID' },
-    { val: 'riderId',    label: 'Rider ID' },
+    { val: 'all',          label: 'All Orders' },
+    { val: 'orderId',      label: 'Order ID' },
+    { val: 'senderId',     label: 'Sender ID' },
+    { val: 'receiverId',   label: 'Receiver ID' },
+    { val: 'riderId',      label: 'Rider ID' },
+    { val: 'senderPhone',   label: 'Sender Phone' },
+    { val: 'receiverPhone', label: 'Receiver Phone' },
+    { val: 'riderPhone',    label: 'Rider Phone' },
+    { val: 'dateRange',    label: 'Date Range' },
   ];
 
   return (
@@ -658,19 +692,31 @@ export default function OrdersPage() {
               {searchTypeOpts.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
             </select>
           </div>
-          {searchType !== 'all' && (
+          {searchType !== 'all' && searchType !== 'dateRange' && (
             <div className="form-group" style={{ margin: 0, flex: 1, minWidth: 200 }}>
               <label className="form-label">{searchTypeOpts.find(o => o.val === searchType)?.label}</label>
               <input className="form-input" value={searchValue} onChange={e => setSearchValue(e.target.value)}
                 placeholder={`Enter ${searchTypeOpts.find(o => o.val === searchType)?.label}...`} />
             </div>
           )}
+          {searchType === 'dateRange' && (
+            <>
+              <div className="form-group" style={{ margin: 0, minWidth: 160 }}>
+                <label className="form-label">From Date</label>
+                <input type="date" className="form-input" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ margin: 0, minWidth: 160 }}>
+                <label className="form-label">To Date</label>
+                <input type="date" className="form-input" value={toDate} onChange={e => setToDate(e.target.value)} />
+              </div>
+            </>
+          )}
           <button type="submit" className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-end', height: 38 }} disabled={loading}>
             <Search size={13} /> Search
           </button>
-          {(searchValue || statusFilter !== 'ALL') && (
+          {(searchValue || fromDate || toDate || statusFilter !== 'ALL') && (
             <button type="button" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-end', height: 38 }}
-              onClick={() => { setSearchValue(''); setSearchType('all'); setStatusFilter('ALL'); }}>
+              onClick={() => { setSearchValue(''); setSearchType('all'); setStatusFilter('ALL'); setFromDate(''); setToDate(''); }}>
               <X size={13} /> Clear
             </button>
           )}

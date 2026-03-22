@@ -24,7 +24,8 @@ import UsersPage from './pages/UsersPage';
 import RefundsPage from './pages/RefundsPage';
 import CancellationPolicyPage from './pages/CancellationPolicyPage';
 import FeedbackPage from './pages/FeedbackPage';
-
+import FinancePage from './pages/FinancePage';
+import ItemCatalogPage from './pages/ItemCatalogPage';
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-center"><div className="loader" /></div>;
@@ -65,8 +66,10 @@ function AppWithNotifications() {
           <Route path="service-areas"     element={<ServiceAreaPage />} />
           <Route path="profile"           element={<ProfilePage />} />
           <Route path="refunds"           element={<RefundsPage />} />
+          <Route path="finance" element={<FinancePage />} />
           <Route path="cancellation-policy" element={<CancellationPolicyPage />} />
           <Route path="feedback"            element={<FeedbackPage />} />
+          <Route path="item-catalog"        element={<ItemCatalogPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

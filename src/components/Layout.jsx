@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
-  Navigation,
+  Navigation, Layers,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
   IndianRupee, ArrowDownToLine, MapPin, UserCircle, Users,
-  RotateCcw, Settings2, MessageSquare,
+  RotateCcw, Settings2, MessageSquare, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -33,14 +33,16 @@ const navSections = [
   {
     label: 'Finance',
     items: [
+      { to: '/finance',           icon: BookOpen,         label: 'Accounting Ledger' },
       { to: '/earnings',          icon: IndianRupee,      label: 'Rider Earnings' },
       { to: '/withdrawals',       icon: ArrowDownToLine,  label: 'Withdrawals' },
       { to: '/refunds',           icon: RotateCcw,        label: 'Refunds' },
-      { to: '/security-deposits', icon: ShieldCheck,  label: 'Security Deposits' },
-      { to: '/handling-charges',  icon: IndianRupee,  label: 'Handling Charges' },
+      { to: '/security-deposits', icon: ShieldCheck,      label: 'Security Deposits' },
+      { to: '/handling-charges',  icon: IndianRupee,      label: 'Handling Charges' },
       { to: '/payments',          icon: CreditCard,       label: 'Payments' },
       { to: '/pricing',           icon: BadgePercent,     label: 'Pricing' },
       { to: '/offers',            icon: Tag,              label: 'Offers' },
+      { to: '/item-catalog',      icon: Layers,           label: 'Item Catalog' },
     ],
   },
   {

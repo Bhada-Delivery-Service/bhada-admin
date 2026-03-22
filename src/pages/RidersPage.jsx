@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bike, Search, RefreshCw, X, CheckCircle, XCircle, Eye, Star, FileText, ExternalLink, Navigation, Banknote, Copy, Check } from 'lucide-react';
+import { Bike, Search, RefreshCw, X, CheckCircle, XCircle, Eye, Star, FileText, ExternalLink, Navigation, Banknote, Copy, Check, ShieldOff, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ridersAPI } from '../services/api';
@@ -123,6 +123,7 @@ function BankAccountBlock({ rider }) {
     </div>
   );
 }
+
 function LiveDot() {
   return (
     <span title="Live updates active" style={{
@@ -145,9 +146,8 @@ export default function RidersPage() {
   const [loading,   setLoading]   = useState(true);
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState(null);
-  const [rateModal, setRateModal] = useState(null); // riderId string when open
+  const [rateModal, setRateModal] = useState(null);
 
-  /* ── Fetch all riders ──────────────────────────────────────────────────── */
   const fetchRiders = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -160,30 +160,23 @@ export default function RidersPage() {
 
   useEffect(() => { fetchRiders(); }, [fetchRiders]);
 
-  /* ── Real-time: re-fetch when a rider submits KYC or onboarding ────────── */
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
     const onNotification = ({ type }) => {
       const triggers = [
-        'KYC_SUBMITTED',
-        'ONBOARDING_SUBMITTED',
-        'KYC_APPROVED',   // in case another admin acts
-        'KYC_REJECTED',
-        'ONBOARDING_APPROVED',
-        'ONBOARDING_REJECTED',
+        'KYC_SUBMITTED', 'ONBOARDING_SUBMITTED',
+        'KYC_APPROVED', 'KYC_REJECTED',
+        'ONBOARDING_APPROVED', 'ONBOARDING_REJECTED',
       ];
-      if (triggers.includes(type)) {
-        fetchRiders(true); // silent refresh — no loading spinner
-      }
+      if (triggers.includes(type)) fetchRiders(true);
     };
 
     socket.on('notification:new', onNotification);
     return () => socket.off('notification:new', onNotification);
   }, [fetchRiders]);
 
-  /* ── Real-time: update rider row and open detail modal via ws:rider:updated */
   useEffect(() => {
     const handler = (e) => {
       const updated = e.detail;
@@ -196,7 +189,6 @@ export default function RidersPage() {
     return () => window.removeEventListener('ws:rider:updated', handler);
   }, []);
 
-  /* ── Also update the detail modal in real-time if a rider is open ───────── */
   useEffect(() => {
     if (!selected) return;
     const socket = getSocket();
@@ -204,7 +196,6 @@ export default function RidersPage() {
 
     const onNotification = ({ type }) => {
       if (['KYC_SUBMITTED', 'ONBOARDING_SUBMITTED'].includes(type)) {
-        // refresh the selected rider's data
         ridersAPI.getById(selected.uid || selected.id)
           .then(({ data }) => {
             const rd = data?.data || data;
@@ -225,7 +216,6 @@ export default function RidersPage() {
       await fn();
       toast.success(successMsg);
       fetchRiders(true);
-      // update detail modal if open
       if (selected) {
         ridersAPI.getById(selected.uid || selected.id)
           .then(({ data }) => setSelected(data?.data || data))
@@ -240,6 +230,8 @@ export default function RidersPage() {
   const handleRejectKyc         = (id) => act(() => ridersAPI.rejectKyc(id),         'KYC rejected');
   const handleApproveOnboarding = (id) => act(() => ridersAPI.approveOnboarding(id), 'Onboarding approved ✓');
   const handleRejectOnboarding  = (id) => act(() => ridersAPI.rejectOnboarding(id),  'Onboarding rejected');
+  const handleBlockRider        = (id) => act(() => ridersAPI.blockRider(id),        'Rider blocked');       // NEW
+  const handleUnblockRider      = (id) => act(() => ridersAPI.unblockRider(id),      'Rider unblocked ✓');  // NEW
 
   /* ── Filter ────────────────────────────────────────────────────────────── */
   const filtered = riders.filter(r => {
@@ -248,7 +240,6 @@ export default function RidersPage() {
     return !q || name.includes(q) || (r.phoneNumber || '').includes(q) || (r.uid || '').toLowerCase().includes(q);
   });
 
-  /* ── Render ────────────────────────────────────────────────────────────── */
   return (
     <div>
       <div className="page-header">
@@ -286,6 +277,7 @@ export default function RidersPage() {
                 <tr>
                   <th>Rider</th>
                   <th>Vehicle</th>
+                  <th>Status</th>
                   <th>KYC</th>
                   <th>KYC Doc</th>
                   <th>Onboarding</th>
@@ -317,9 +309,29 @@ export default function RidersPage() {
                         ) : <span style={{ color: 'var(--text-2)' }}>—</span>}
                       </td>
 
+                      {/* ── Account Status (NEW) ── */}
+                      <td>
+                        {rider.status === 'BLOCKED' ? (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            background: 'var(--red-dim)', color: 'var(--red)',
+                            borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+                          }}>
+                            <ShieldOff size={11} /> Blocked
+                          </span>
+                        ) : (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            background: 'var(--green-dim)', color: 'var(--green)',
+                            borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+                          }}>
+                            <ShieldCheck size={11} /> Active
+                          </span>
+                        )}
+                      </td>
+
                       <td><StatusBadge status={rider.kycStatus || 'NOT_SUBMITTED'} /></td>
 
-                      {/* ── KYC doc thumbnail ── */}
                       <td>
                         {rider.kyc?.documentUrl ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -357,7 +369,6 @@ export default function RidersPage() {
                             <Eye size={13} />
                           </button>
 
-                          {/* Direct Track button — navigates to Tracking page and searches this rider */}
                           <button
                             className="btn btn-sm"
                             title="Track on map"
@@ -366,6 +377,27 @@ export default function RidersPage() {
                           >
                             <Navigation size={12} /> Track
                           </button>
+
+                          {/* ── Block / Unblock (NEW) ── */}
+                          {rider.status === 'BLOCKED' ? (
+                            <button
+                              className="btn btn-sm"
+                              title="Unblock rider"
+                              style={{ background: 'var(--green-dim)', color: 'var(--green)', fontSize: 11 }}
+                              onClick={() => handleUnblockRider(rid)}
+                            >
+                              <ShieldCheck size={12} /> Unblock
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              title="Block rider"
+                              style={{ fontSize: 11 }}
+                              onClick={() => handleBlockRider(rid)}
+                            >
+                              <ShieldOff size={12} /> Block
+                            </button>
+                          )}
 
                           {rider.kycStatus === 'PENDING' && (
                             <>
@@ -424,6 +456,31 @@ export default function RidersPage() {
               <div className="detail-item"><label>Phone</label><p>{selected.phoneNumber || '—'}</p></div>
               <div className="detail-item"><label>Email</label><p>{selected.email || '—'}</p></div>
               <div className="detail-item"><label>UID</label><p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{selected.uid || '—'}</p></div>
+
+              {/* ── Account Status in modal (NEW) ── */}
+              <div className="detail-item">
+                <label>Account Status</label>
+                <p>
+                  {selected.status === 'BLOCKED' ? (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: 'var(--red-dim)', color: 'var(--red)',
+                      borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600,
+                    }}>
+                      <ShieldOff size={12} /> Blocked
+                    </span>
+                  ) : (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: 'var(--green-dim)', color: 'var(--green)',
+                      borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600,
+                    }}>
+                      <ShieldCheck size={12} /> Active
+                    </span>
+                  )}
+                </p>
+              </div>
+
               <div className="detail-item"><label>KYC Status</label><p><StatusBadge status={selected.kycStatus || 'NOT_SUBMITTED'} /></p></div>
               <div className="detail-item"><label>Onboarding</label><p><StatusBadge status={selected.onboardingStatus || 'NOT_SUBMITTED'} /></p></div>
               <div className="detail-item"><label>Vehicle Type</label><p>{selected.vehicle?.vehicleType || '—'}</p></div>
@@ -478,35 +535,50 @@ export default function RidersPage() {
               <BankAccountBlock rider={selected} />
             </div>
 
-            {/* Quick-action buttons inside modal */}
-            {(selected.kycStatus === 'PENDING' || selected.onboardingStatus === 'PENDING') && (
-              <div style={{ marginTop: 20, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {selected.kycStatus === 'PENDING' && (
-                  <>
-                    <button className="btn btn-sm" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}
-                      onClick={() => handleApproveKyc(selected.uid || selected.id)}>
-                      <CheckCircle size={13} /> Approve KYC
-                    </button>
-                    <button className="btn btn-danger btn-sm"
-                      onClick={() => handleRejectKyc(selected.uid || selected.id)}>
-                      <XCircle size={13} /> Reject KYC
-                    </button>
-                  </>
-                )}
-                {selected.onboardingStatus === 'PENDING' && (
-                  <>
-                    <button className="btn btn-sm" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}
-                      onClick={() => handleApproveOnboarding(selected.uid || selected.id)}>
-                      <CheckCircle size={13} /> Approve Onboarding
-                    </button>
-                    <button className="btn btn-danger btn-sm"
-                      onClick={() => handleRejectOnboarding(selected.uid || selected.id)}>
-                      <XCircle size={13} /> Reject Onboarding
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+            {/* ── Quick-action buttons inside modal (NEW: block/unblock always visible) ── */}
+            <div style={{ marginTop: 20, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {selected.status === 'BLOCKED' ? (
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'var(--green-dim)', color: 'var(--green)' }}
+                  onClick={() => handleUnblockRider(selected.uid || selected.id)}
+                >
+                  <ShieldCheck size={13} /> Unblock Rider
+                </button>
+              ) : (
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => handleBlockRider(selected.uid || selected.id)}
+                >
+                  <ShieldOff size={13} /> Block Rider
+                </button>
+              )}
+
+              {selected.kycStatus === 'PENDING' && (
+                <>
+                  <button className="btn btn-sm" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}
+                    onClick={() => handleApproveKyc(selected.uid || selected.id)}>
+                    <CheckCircle size={13} /> Approve KYC
+                  </button>
+                  <button className="btn btn-danger btn-sm"
+                    onClick={() => handleRejectKyc(selected.uid || selected.id)}>
+                    <XCircle size={13} /> Reject KYC
+                  </button>
+                </>
+              )}
+              {selected.onboardingStatus === 'PENDING' && (
+                <>
+                  <button className="btn btn-sm" style={{ background: 'var(--green-dim)', color: 'var(--green)' }}
+                    onClick={() => handleApproveOnboarding(selected.uid || selected.id)}>
+                    <CheckCircle size={13} /> Approve Onboarding
+                  </button>
+                  <button className="btn btn-danger btn-sm"
+                    onClick={() => handleRejectOnboarding(selected.uid || selected.id)}>
+                    <XCircle size={13} /> Reject Onboarding
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
