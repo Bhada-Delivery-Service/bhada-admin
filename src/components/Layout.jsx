@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Bike, ShieldCheck, Tag, BadgePercent,
-  Navigation, Layers,
+  Navigation, Layers,Truck,
   AlertTriangle, CreditCard, LogOut, Menu, X, Bell,
   IndianRupee, ArrowDownToLine, MapPin, UserCircle, Users,
   RotateCcw, Settings2, MessageSquare, BookOpen
@@ -52,6 +52,7 @@ const navSections = [
       { to: '/cancellation-policy', icon: Settings2,  label: 'Cancellation Policy' },
       { to: '/admins',  icon: ShieldCheck,  label: 'Admins' },
       { to: '/profile', icon: UserCircle,   label: 'My Profile' },
+      { to: '/vehicle-types', icon: Truck, label: 'Vehicle Types' },
     ],
   },
 ];
