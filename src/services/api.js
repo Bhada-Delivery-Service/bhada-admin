@@ -309,7 +309,15 @@ export const itemCatalogAPI = {
   updateCategory: (id, data)           => api.put(`/item-catalog/categories/${id}`, data),
   deleteCategory: (id)                 => api.delete(`/item-catalog/categories/${id}`),
 };
-
+export const vehicleConfigAPI = {
+  getAll:  ()        => api.get('/vehicle-config/all'),
+  getActive: ()      => api.get('/vehicle-config'),
+  create:  (data)    => api.post('/vehicle-config', data),
+  update:  (id, data)=> api.put(`/vehicle-config/${id}`, data),
+  toggle:  (id)      => api.patch(`/vehicle-config/${id}/toggle`),
+  delete:  (id)      => api.delete(`/vehicle-config/${id}`),
+  seed:    ()        => api.post('/vehicle-config/seed'),
+};
 // ─── Helper (add once at top of api.js if not already there) ─────────────────
 function buildQuery(params = {}) {
   const q = Object.entries(params)
